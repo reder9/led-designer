@@ -1,5 +1,5 @@
 import { Rnd } from "react-rnd";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import useHistory from "../hooks/useHistory";
 import useClipboard from "../hooks/useClipboard";
 import useKeyboardShortcuts from "../hooks/useKeyboardShortcuts";
@@ -19,12 +19,28 @@ export default function Panel({
   roundedEdges,
   width,
   height,
+  glowMode,
+  brightness,
+  speed = 5,
+  showLedBorder = true,
 }) {
   const textareaRefs = useRef({});
   const [isDragging, setIsDragging] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
 
-  // History + clipboard hooks
-  const { saveToHistory, undo, redo, history } = useHistory(elements, setElements);
+  // Set default glowMode to rainbow if not provided
+  const effectiveGlowMode = glowMode || "rainbow";
+
+  // Animation clock
+  useEffect(() => {
+    if (!isPowerOn) return;
+    const interval = setInterval(() => setCurrentTime((t) => t + 0.05), 50);
+    return () => clearInterval(interval);
+  }, [isPowerOn]);
+
+  // History + clipboard
+  const { saveToHistory, undo, redo } = useHistory(elements, setElements);
   const { copy, cut, paste, duplicate, deleteSelected } = useClipboard({
     elements,
     setElements,
@@ -33,10 +49,9 @@ export default function Panel({
     saveToHistory,
   });
 
-  // Snapping state + logic
+  // Snapping
   const [guides, setGuides] = useState([]);
   const [distanceIndicators, setDistanceIndicators] = useState([]);
-
   const { applySnapping, clearGuides } = useSnapping({
     elements,
     width,
@@ -55,6 +70,8 @@ export default function Panel({
     paste,
     duplicate,
     selectedElement,
+    isEditing,
+    setIsEditing,
   });
 
   const handleContextMenu = (e, id) => {
@@ -63,91 +80,253 @@ export default function Panel({
     createContextMenu(e.pageX, e.pageY);
   };
 
+  const handleElementClick = (e, el) => {
+    e.stopPropagation();
+    setSelectedElement(el.id);
+    
+    // If double click, enable editing
+    if (e.detail === 2 && el.type === "text") {
+      setIsEditing(true);
+      // Focus the textarea after a small delay to ensure it's rendered
+      setTimeout(() => {
+        const textarea = textareaRefs.current[el.id];
+        if (textarea) {
+          textarea.focus();
+          textarea.select();
+        }
+      }, 50);
+    }
+  };
+
+  // Helpers
+  const clampSpeed = Math.max(1, Math.min(10, Number(speed) || 5));
+  
+  const getEffectiveSpeed = (baseMultiplier = 1) => {
+    const baseSpeed = 1.5;
+    const speedFactor = clampSpeed / 5;
+    return baseSpeed * speedFactor * baseMultiplier;
+  };
+
+  const t = currentTime * getEffectiveSpeed();
+
+  const hexToRgb = (hex) => {
+    const h = hex.replace("#", "");
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    return { r, g, b };
+  };
+
+  const palette = [
+    "#ff0000", "#00ff00", "#0000ff",
+    "#ffff00", "#ff00ff", "#00ffff",
+    "#ffffff", "#ff7700", "#ff1493", "#00faff",
+  ];
+
+  const paletteAt = (i) => palette[((i % palette.length) + palette.length) % palette.length];
+
+  // Background glow per mode
+  const getGlowBackground = () => {
+    if (!isPowerOn) return "transparent";
+
+    switch (effectiveGlowMode) {
+      case "solid":
+        return glowColor;
+      case "rainbow":
+        return `conic-gradient(from ${t * 60}deg, red, orange, yellow, green, cyan, blue, violet, red)`;
+      case "breathing": {
+        const { r, g, b } = hexToRgb(glowColor);
+        const alpha = ((Math.sin(t * 0.9 * Math.PI) + 1) / 2);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+      case "chase":
+        return `conic-gradient(from ${t * 145}deg, ${glowColor}, transparent 20%, ${glowColor} 40%)`;
+      case "fade": {
+        const hue = (t * 40) % 360;
+        return `hsl(${hue}, 100%, 50%)`;
+      }
+      case "smooth": {
+        const hue = (t * 40) % 360;
+        return `hsl(${hue}, 100%, 55%)`;
+      }
+      case "strobe": {
+        const on = Math.floor(t * 3) % 2 === 0;
+        const { r, g, b } = hexToRgb(glowColor);
+        return `rgba(${r}, ${g}, ${b}, ${on ? 1 : 0})`;
+      }
+      case "flash": {
+        const idx = Math.floor(t * 4);
+        return paletteAt(idx);
+      }
+      case "jump": {
+        const idx = Math.floor(t * 1);
+        return paletteAt(idx);
+      }
+      default:
+        return glowColor;
+    }
+  };
+
+  // Color passed to ElementRenderer
+  const getCurrentGlowColor = () => {
+    if (!isPowerOn) return "#555";
+
+    switch (effectiveGlowMode) {
+      case "solid":
+        return glowColor;
+      case "rainbow": {
+        const hue = (t * 45) % 360;
+        return `hsl(${hue}, 100%, 70%)`;
+      }
+      case "breathing":
+        return glowColor;
+      case "chase": {
+        const hue = (t * 90) % 360;
+        return `hsl(${hue}, 100%, 70%)`;
+      }
+      case "fade": {
+        const hue = (t * 30) % 360;
+        return `hsl(${hue}, 100%, 70%)`;
+      }
+      case "smooth": {
+        const hue = (t * 11.25) % 360;
+        return `hsl(${hue}, 100%, 70%)`;
+      }
+      case "strobe": {
+        const on = Math.floor(t * 3) % 2 === 0;
+        return on ? glowColor : "#000000";
+      }
+      case "flash": {
+        const idx = Math.floor(t * 4);
+        return paletteAt(idx);
+      }
+      case "jump": {
+        const idx = Math.floor(t * 1);
+        return paletteAt(idx);
+      }
+      default:
+        return glowColor;
+    }
+  };
+
   return (
     <div
-      id="panel-container"
+      id="panel-wrapper"
       className="relative flex items-center justify-center"
-      style={{
-        width,
-        height,
-        backgroundColor: "black",
-        borderRadius: roundedEdges ? "20px" : "0px",
-        boxShadow: isPowerOn ? `0 0 40px 15px ${glowColor}` : "none",
-        transition: "box-shadow 0.3s ease",
-        opacity: isPowerOn ? 1 : 0.3,
+      style={{ width, height }}
+      onClick={() => {
+        setSelectedElement(null);
+        setIsEditing(false);
       }}
-      onClick={() => setSelectedElement(null)}
     >
-      {elements.map((el) => (
-        <Rnd
-          key={el.id}
-          size={{ width: el.width, height: el.height }}
-          position={{ x: el.x, y: el.y }}
-          bounds="parent"
-          onDragStart={() => setIsDragging(true)}
-          onDrag={(e, d) => {
-            // Preview snapping guides only, don't update elements yet
-            applySnapping(el, d.x, d.y);
+      {/* Smooth, colorful LED-style glow border */}
+      {showLedBorder && isPowerOn && (
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none"
+          style={{
+            borderRadius: roundedEdges ? "20px" : "0px",
+            background: getGlowBackground(),
+            filter: "blur(20px)",
+            boxShadow: `
+              0 0 18px ${glowColor},
+              0 0 40px ${glowColor},
+              0 0 65px ${glowColor}
+            `,
+            opacity: brightness / 100,
           }}
-          onDragStop={(e, d) => {
-            setIsDragging(false);
+        />
+      )}
 
-            // Final snapped position
-            const snapped = applySnapping(el, d.x, d.y);
-
-            // Use functional update to get the latest state
-            setElements((prevElements) => {
-              const updatedElements = prevElements.map((x) =>
-                x.id === el.id ? { ...x, ...snapped } : x
-              );
-              
-              // Save history with the updated elements
-              saveToHistory(updatedElements);
-              return updatedElements;
-            });
-
-            clearGuides();
+      {/* Subtle inner glow */}
+      {isPowerOn && (
+        <div
+          className="absolute inset-0 rounded-2xl z-8"
+          style={{
+            background:
+              "radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 60%)",
+            boxShadow: "inset 0 0 15px rgba(255, 255, 255, 0.2)",
+            opacity: (brightness / 100) * 0.4,
+            borderRadius: roundedEdges ? "20px" : "0px",
           }}
-          onResizeStop={(e, dir, ref, delta, pos) => {
-            setElements((prevElements) => {
-              const updatedElements = prevElements.map((x) =>
-                x.id === el.id
-                  ? {
-                      ...x,
-                      x: pos.x,
-                      y: pos.y,
-                      width: +ref.style.width,
-                      height: +ref.style.height,
-                    }
-                  : x
-              );
-              
-              // Save history with the updated elements
-              saveToHistory(updatedElements);
-              return updatedElements;
-            });
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedElement(el.id);
-          }}
-          onContextMenu={(e) => handleContextMenu(e, el.id)}
-        >
-          <ElementRenderer
-            el={el}
-            glowColor={glowColor}
-            isPowerOn={isPowerOn}
-            selected={selectedElement === el.id}
-            textareaRefs={textareaRefs}
-            setElements={setElements}
-            saveToHistory={saveToHistory}
-            deleteSelected={deleteSelected}
-          />
-        </Rnd>
-      ))}
+        />
+      )}
 
-      <SnappingGuides guides={guides} />
-      <DistanceIndicators indicators={distanceIndicators} />
+      {/* Opaque panel */}
+      <div
+        className="absolute inset-0 bg-black z-15"
+        style={{
+          borderRadius: roundedEdges ? "20px" : "0px",
+          opacity: isPowerOn ? 0.95 : 0.3,
+          border:
+            showLedBorder && isPowerOn
+              ? "2px solid rgba(255,255,255,0.15)"
+              : "none",
+        }}
+      >
+        {elements.map((el) => (
+          <Rnd
+            key={el.id}
+            size={{ width: el.width, height: el.height }}
+            position={{ x: el.x, y: el.y }}
+            bounds="parent"
+            onDragStart={() => setIsDragging(true)}
+            onDrag={(e, d) => applySnapping(el, d.x, d.y)}
+            onDragStop={(e, d) => {
+              setIsDragging(false);
+              const snapped = applySnapping(el, d.x, d.y);
+              setElements((prev) => {
+                const updated = prev.map((x) =>
+                  x.id === el.id ? { ...x, ...snapped } : x
+                );
+                saveToHistory(updated);
+                return updated;
+              });
+              clearGuides();
+            }}
+            onResizeStop={(e, dir, ref, delta, pos) => {
+              setElements((prev) => {
+                const updated = prev.map((x) =>
+                  x.id === el.id
+                    ? {
+                        ...x,
+                        x: pos.x,
+                        y: pos.y,
+                        width: +ref.style.width,
+                        height: +ref.style.height,
+                      }
+                    : x
+                );
+                saveToHistory(updated);
+                return updated;
+              });
+            }}
+            onClick={(e) => handleElementClick(e, el)}
+            onDoubleClick={(e) => handleElementClick(e, el)}
+            onContextMenu={(e) => handleContextMenu(e, el.id)}
+            enableResizing={!isEditing}
+            enableDragging={!isEditing}
+          >
+            <ElementRenderer
+              el={el}
+              glowColor={getCurrentGlowColor()}
+              isPowerOn={isPowerOn}
+              selected={selectedElement === el.id}
+              textareaRefs={textareaRefs}
+              setElements={setElements}
+              saveToHistory={saveToHistory}
+              deleteSelected={deleteSelected}
+              brightness={brightness}
+              glowMode={effectiveGlowMode}
+              currentTime={t}
+              isEditing={isEditing}
+              setIsEditing={setIsEditing}
+            />
+          </Rnd>
+        ))}
+
+        <SnappingGuides guides={guides} />
+        <DistanceIndicators indicators={distanceIndicators} />
+      </div>
     </div>
   );
 }

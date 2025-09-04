@@ -15,10 +15,11 @@ export default function App() {
   const [selectedElement, setSelectedElement] = useState(null);
   const [fontFamily, setFontFamily] = useState("Arial");
   const [fontSize, setFontSize] = useState(16);
-  const [isRainbowEffect, setIsRainbowEffect] = useState(false);
   const [isPowerOn, setIsPowerOn] = useState(true);
   const [brightness, setBrightness] = useState(80);
-  const [activeEffect, setActiveEffect] = useState(null);
+  const [glowMode, setGlowMode] = useState("rainbow"); // Changed from "solid" to "rainbow"
+  const [showLedBorder, setShowLedBorder] = useState(true);
+  const [speed, setSpeed] = useState(3); // Changed from 5 to 3 (Normal speed)
 
   // Initialize with placeholder text
   useEffect(() => {
@@ -59,13 +60,15 @@ export default function App() {
           roundedEdges={roundedEdges}
           setRoundedEdges={setRoundedEdges}
           glowColor={glowColor}
-          className="bg-gray-900" // Left nav background
+          showLedBorder={showLedBorder}
+          setShowLedBorder={setShowLedBorder}
+          className="bg-gray-900"
         />
 
         {/* Panel */}
         <main
           className="flex-1 flex items-center justify-center p-6"
-          style={{ background: "linear-gradient(to bottom right, #1e293b, #0f172a)" }} // Main panel background
+          style={{ background: "linear-gradient(to bottom right, #1e293b, #0f172a)" }}
         >
           <Panel
             elements={elements}
@@ -77,6 +80,10 @@ export default function App() {
             roundedEdges={roundedEdges}
             width={width}
             height={height}
+            glowMode={glowMode}
+            brightness={brightness}
+            speed={speed} // <-- PASS SPEED PROP HERE
+            showLedBorder={showLedBorder}
           />
         </main>
 
@@ -84,15 +91,15 @@ export default function App() {
         <SidebarRight
           glowColor={glowColor}
           setGlowColor={setGlowColor}
-          isRainbowEffect={isRainbowEffect}
-          setIsRainbowEffect={setIsRainbowEffect}
-          activeEffect={activeEffect}
-          setActiveEffect={setActiveEffect}
           isPowerOn={isPowerOn}
           setIsPowerOn={setIsPowerOn}
           brightness={brightness}
           setBrightness={setBrightness}
-          className="bg-gray-800" // Right nav background
+          glowMode={glowMode}
+          setGlowMode={setGlowMode}
+          speed={speed} // <-- PASS SPEED PROP HERE
+          setSpeed={setSpeed} // <-- PASS SETSPEED PROP HERE
+          className="bg-gray-800"
         />
       </div>
 

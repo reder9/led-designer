@@ -1,2 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap');
 @import "tailwindcss";
+
+@keyframes rainbowText {
+  0% { color: hsl(0, 100%, 50%); }
+  16% { color: hsl(60, 100%, 50%); }
+  33% { color: hsl(120, 100%, 50%); }
+  50% { color: hsl(180, 100%, 50%); }
+  66% { color: hsl(240, 100%, 50%); }
+  83% { color: hsl(300, 100%, 50%); }
+  100% { color: hsl(360, 100%, 50%); }
+}
