@@ -1,5 +1,6 @@
-import React, { useState, Fragment } from "react";
-import { iconComponentMap } from "../utils/iconMap";
+import React, { useState, Fragment, useEffect } from "react";
+import { iconComponentMap } from "../utils/iconMap.jsx";
+import { icons } from "../utils/icons";
 
 export default function SidebarLeft({
   elements,
@@ -26,11 +27,7 @@ export default function SidebarLeft({
     "Digital-7", "DS-Digital", "Press Start 2P", "Share Tech Mono",
   ];
 
-  // Build iconOptions from map instead of hardcoding JSX
-  const iconOptions = Object.keys(iconComponentMap).map((key) => ({
-    name: key,
-    Icon: iconComponentMap[key],
-  }));
+  // No need for iconOptions as we'll map directly from iconComponentMap
 
   // Local state for the input value to handle typing
   const [fontSizeInput, setFontSizeInput] = useState(fontSize.toString());
@@ -81,11 +78,11 @@ export default function SidebarLeft({
   const selectedIcon = selectedEl && selectedEl.type === "icon" ? selectedEl : null;
   const selectedText = selectedEl && selectedEl.type === "text" ? selectedEl : null;
 
-  const updateIconContent = (icon) => {
+  const updateIconContent = (iconName) => {
     if (selectedElement) {
       setElements(elements.map(el =>
         el.id === selectedElement && el.type === "icon"
-          ? { ...el, content: icon.name, iconKey: icon.name }
+          ? { ...el, content: iconName, iconKey: iconName }
           : el
       ));
     }
@@ -170,7 +167,78 @@ export default function SidebarLeft({
     }
   };
 
-    // --- Export SVG Function ---
+    // Icon symbols state for SVG export
+  const [iconSymbols, setIconSymbols] = useState('');
+
+  // Load icon paths when component mounts
+  useEffect(() => {
+    const extractSvgContent = async (svgUrl) => {
+      try {
+        const response = await fetch(svgUrl);
+        const text = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'image/svg+xml');
+
+        // Try to find SVG content
+        const pathElement = doc.querySelector('path');
+        if (pathElement?.getAttribute('d')) {
+          return pathElement.getAttribute('d');
+        }
+
+        // If no path, try to get the entire SVG content
+        const svgElement = doc.querySelector('svg');
+        return svgElement?.innerHTML || null;
+      } catch (error) {
+        console.error('Error extracting SVG content:', error);
+        return null;
+      }
+    };
+
+    const loadIconPaths = async () => {
+      try {
+        console.log('Starting to load icon paths...'); // Debug log
+        const symbolPromises = Object.entries(icons).map(async ([key, src]) => {
+          try {
+            console.log(`Processing icon: ${key}`); // Debug log
+            const svgContent = await extractSvgContent(src);
+            
+            if (!svgContent) {
+              console.warn(`No SVG content found for icon: ${key}`);
+              return '';
+            }
+
+            // Create symbol with the entire SVG content
+            const symbol = `
+              <symbol id="icon-${key}" viewBox="0 0 24 24">
+                ${svgContent.includes('<path') ? svgContent : `<path d="${svgContent}"/>`}
+              </symbol>
+            `;
+            console.log(`Created symbol for ${key}`); // Debug log
+            return symbol;
+          } catch (error) {
+            console.error(`Error processing icon ${key}:`, error);
+            return '';
+          }
+        });
+
+        const symbols = (await Promise.all(symbolPromises)).filter(Boolean).join('\n');
+
+        if (!symbols) {
+          console.warn('No symbols were created');
+          return;
+        }
+
+        console.log('Setting icon symbols...'); // Debug log
+        setIconSymbols(symbols);
+      } catch (error) {
+        console.error('Error loading icon paths:', error);
+      }
+    };
+
+    loadIconPaths();
+  }, []);
+
+  // --- Export SVG Function ---
   const exportAsSVG = () => {
     // Ensure 2:1 ratio dimensions (width is twice the height)
     const panelWidth = 800;
@@ -201,18 +269,34 @@ export default function SidebarLeft({
         ry="${roundedEdges ? 20 : 0}"
       />`;
 
-    // Add defs section for icon paths
-    const iconSymbols = Object.entries(iconComponentMap).map(([key, Icon]) => {
-      return `
-        <symbol id="icon-${key}" viewBox="0 0 24 24">
-          <path d="M11 7H13V9H11V7ZM11 11H13V17H11V11ZM12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z"/>
-        </symbol>
-      `;
-    });
-
     const defs = `
       <defs>
-        ${iconSymbols.join('\n')}
+        ${iconSymbols}
+      </defs>
+    `;
+
+    // Enhanced glow filter with more intense effects
+    const glowFilter = `
+      <defs>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feFlood flood-color="${glowColor}" flood-opacity="0.8" result="colorAlpha"/>
+          <feComposite in="colorAlpha" in2="coloredBlur" operator="in" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <filter id="iconGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feFlood flood-color="${glowColor}" flood-opacity="1"/>
+          <feComposite in2="blur" operator="in"/>
+          <feMerge>
+            <feMergeNode/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
       </defs>
     `;
 
@@ -223,73 +307,81 @@ export default function SidebarLeft({
         const textAnchor = el.textAlign === "left" ? "start" : 
                           el.textAlign === "right" ? "end" : "middle";
         
-        // Calculate exact x position based on alignment
-        let x;
-        if (el.textAlign === "left") {
-          x = el.x;
-        } else if (el.textAlign === "right") {
-          // For right-aligned text, we need to account for the actual text width
-          x = Math.min(el.x + el.width, panelWidth - 2); // Keep 2px margin from edge
-        } else {
-          x = el.x + (el.width / 2);
-        }
-        
-        // Calculate exact y position (vertical center)
-        const y = el.y + (el.height / 2);
-        
-        return `
-          <text
-            x="${x}"
-            y="${y}"
-            font-family="${el.fontFamily}"
-            font-size="${el.fontSize}"
-            font-weight="${fontWeight}"
-            font-style="${fontStyle}"
-            text-anchor="${textAnchor}"
-            dominant-baseline="middle"
-            fill="${glowColor}"
-            style="filter: url(#glow)"
-          >
-            ${el.content}
-          </text>`;
-      } else if (el.type === "icon" && el.content) {
-        // Use a simple SVG shape for icons in the export
+        // Create a container group for the text with exact positioning
         return `
           <g transform="translate(${el.x},${el.y})">
-            <rect
-              width="${el.width}"
-              height="${el.height}"
-              fill="none"
-            />
+            <text
+              x="${el.textAlign === "left" ? 0 : 
+                 el.textAlign === "right" ? el.width : 
+                 el.width / 2}"
+              y="${el.height / 2}"
+              font-family="${el.fontFamily}"
+              font-size="${el.fontSize}"
+              font-weight="${fontWeight}"
+              font-style="${fontStyle}"
+              text-anchor="${textAnchor}"
+              dominant-baseline="middle"
+              fill="${glowColor}"
+              style="filter: url(#glow)"
+            >${el.content}</text>
+          </g>`;
+      } else if (el.type === "icon" && el.content) {
+        // Enhanced icon rendering with proper sizing and glow effects
+        return `
+          <g transform="translate(${el.x},${el.y})">
             <use
               href="#icon-${el.content}"
+              x="0"
+              y="0"
               width="${el.width}"
               height="${el.height}"
               fill="${glowColor}"
-              style="filter: url(#glow)"
+              style="filter: url(#iconGlow); transform-origin: center center;"
             />
           </g>`;
       }
       return "";
     }).join("\n");
 
-    // Enhanced glow filter
-    const glowFilter = `
+    // Enhanced glow filters for both text and icons
+    const filters = `
       <defs>
         <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-          <feFlood flood-color="${glowColor}" flood-opacity="0.5" result="glowColor"/>
-          <feComposite in="glowColor" in2="coloredBlur" operator="in" result="softGlow"/>
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feFlood flood-color="${glowColor}" flood-opacity="0.8" result="colorAlpha"/>
+          <feComposite in="colorAlpha" in2="coloredBlur" operator="in" result="coloredBlur"/>
           <feMerge>
-            <feMergeNode in="softGlow"/>
-            <feMergeNode in="softGlow"/>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <filter id="iconGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feFlood flood-color="${glowColor}" flood-opacity="1"/>
+          <feComposite in2="blur" operator="in"/>
+          <feMerge>
+            <feMergeNode/>
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
       </defs>
     `;
 
-    const svgString = `${svgHeader}\n${glowFilter}\n${defs}\n${rect}\n${svgContent}\n${svgFooter}`;
+    // Debug output
+    console.log('Exporting SVG with icons:', {
+      hasSymbols: Boolean(iconSymbols),
+      symbolsContent: iconSymbols,
+      elementsWithIcons: elements.filter(el => el.type === 'icon').map(el => el.content)
+    });
+
+    // Combine all SVG parts with improved structure
+    const svgString = `${svgHeader}
+      ${filters}
+      ${iconSymbols ? `<defs>${iconSymbols}</defs>` : '<!-- No icon symbols available -->'}
+      ${rect}
+      ${svgContent}
+      ${svgFooter}`;
 
     const blob = new Blob([svgString], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
@@ -331,27 +423,22 @@ export default function SidebarLeft({
             </button>
           </div>
           
-          <div className="mt-4">
-            <h4 className="text-sm font-semibold text-blue-400 mb-2">Icon Style</h4>
-            <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto p-2 bg-gray-800 rounded">
-              {iconOptions.map((icon, index) => {
-                const { Icon } = icon;
-                return (
-                  <button
-                    key={index}
-                    onClick={() => updateIconContent(icon)}
-                    className="w-8 h-8 flex items-center justify-center text-white text-lg hover:bg-gray-700 rounded transition"
-                    style={{
-                      textShadow: `0 0 5px ${glowColor}`,
-                      backgroundColor: selectedIcon.content === icon.name ? glowColor : "transparent",
-                    }}
-                    title={`Select ${icon.name}`}
-                  >
-                    {Icon ? <Icon /> : "?"}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="mt-4 space-y-4">
+            <h4 className="text-sm font-semibold text-blue-400">Available Icons</h4>
+            {Object.entries(iconComponentMap).map(([iconName, Icon]) => (
+              <button
+                key={iconName}
+                onClick={() => updateIconContent(iconName)}
+                className="w-8 h-8 flex items-center justify-center text-white text-lg hover:bg-gray-700 rounded transition"
+                style={{
+                  textShadow: `0 0 5px ${glowColor}`,
+                  backgroundColor: selectedIcon.content === iconName ? glowColor : "transparent",
+                }}
+                title={`Select ${iconName}`}
+              >
+                {Icon ? <Icon /> : "?"}
+              </button>
+            ))}
           </div>
         </>
       )}

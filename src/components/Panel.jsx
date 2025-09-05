@@ -41,13 +41,23 @@ export default function Panel({
 
   // History + clipboard
   const { saveToHistory, undo, redo } = useHistory(elements, setElements);
-  const { copy, cut, paste, duplicate, deleteSelected } = useClipboard({
+  const { copy, cut, paste, duplicate } = useClipboard({
     elements,
     setElements,
     selectedElement,
     setSelectedElement,
     saveToHistory,
   });
+
+  // Delete functionality
+  const deleteSelected = () => {
+    if (selectedElement) {
+      const updatedElements = elements.filter(el => el.id !== selectedElement);
+      setElements(updatedElements);
+      setSelectedElement(null);
+      saveToHistory(updatedElements);
+    }
+  };
 
   // Snapping
   const [guides, setGuides] = useState([]);

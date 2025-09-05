@@ -7,4 +7,8 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  assetsInclude: ['**/*.svg'], // Treat SVGs as assets
+  build: {
+    assetsInlineLimit: 0, // Always emit SVG files as assets
+  },
 });
