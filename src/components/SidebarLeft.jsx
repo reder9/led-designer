@@ -51,6 +51,9 @@ export default function SidebarLeft({
       height: 40,
       fontFamily,
       fontSize,
+      fontWeight: "normal",
+      fontStyle: "normal",
+      textAlign: "center",
     };
     setElements([...elements, newElement]);
     setSelectedElement(newElement.id);
@@ -72,7 +75,9 @@ export default function SidebarLeft({
     setSelectedElement(newElement.id);
   };
 
-  const selectedIcon = elements.find(el => el.id === selectedElement && el.type === "icon");
+  const selectedEl = elements.find(el => el.id === selectedElement);
+  const selectedIcon = selectedEl && selectedEl.type === "icon" ? selectedEl : null;
+  const selectedText = selectedEl && selectedEl.type === "text" ? selectedEl : null;
 
   const updateIconContent = (icon) => {
     if (selectedElement) {
@@ -102,6 +107,30 @@ export default function SidebarLeft({
         el.id === selectedElement ? { ...el, fontSize: newSize } : el
       ));
     }
+  };
+
+  const updateTextFormat = (property, value) => {
+    if (selectedElement && selectedText) {
+      setElements(elements.map(el => 
+        el.id === selectedElement ? { ...el, [property]: value } : el
+      ));
+    }
+  };
+
+  const toggleBold = () => {
+    if (selectedText) {
+      updateTextFormat("fontWeight", selectedText.fontWeight === "bold" ? "normal" : "bold");
+    }
+  };
+
+  const toggleItalic = () => {
+    if (selectedText) {
+      updateTextFormat("fontStyle", selectedText.fontStyle === "italic" ? "normal" : "italic");
+    }
+  };
+
+  const setTextAlignment = (alignment) => {
+    updateTextFormat("textAlign", alignment);
   };
 
   const incrementFontSize = () => {
@@ -161,13 +190,20 @@ export default function SidebarLeft({
       const y = el.y + el.height / 2;
 
       if (el.type === "text") {
+        const fontWeight = el.fontWeight || "normal";
+        const fontStyle = el.fontStyle || "normal";
+        const textAnchor = el.textAlign === "left" ? "start" : 
+                          el.textAlign === "right" ? "end" : "middle";
+        
         return `
           <text
-            x="${x}"
+            x="${textAnchor === "middle" ? x : textAnchor === "start" ? el.x + 5 : el.x + el.width - 5}"
             y="${y}"
             font-family="${el.fontFamily}"
             font-size="${el.fontSize}"
-            text-anchor="middle"
+            font-weight="${fontWeight}"
+            font-style="${fontStyle}"
+            text-anchor="${textAnchor}"
             alignment-baseline="middle"
             fill="${glowColor}"
           >
@@ -193,7 +229,7 @@ export default function SidebarLeft({
     const svgString = `${svgHeader}\n${rect}\n${svgContent}\n${svgFooter}`;
 
     const blob = new Blob([svgString], { type: "image/svg+xml" });
-    const url = URL.revokeObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = "panel-export.svg";
@@ -240,10 +276,48 @@ export default function SidebarLeft({
         </div>
       )}
 
-      {/* Font Controls */}
-      {selectedElement && (
+      {/* Text Formatting Controls */}
+      {selectedText && (
         <div className="mt-6 space-y-4">
           <h3 className="text-sm font-semibold text-blue-400">Text Settings</h3>
+          
+          {/* Text Formatting Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={toggleBold}
+              className={`flex-1 px-2 py-1 rounded ${selectedText.fontWeight === "bold" ? "bg-cyan-600" : "bg-gray-700 hover:bg-gray-600"} transition`}
+              title="Bold"
+            >
+              <span className={`font-bold ${selectedText.fontWeight === "bold" ? "text-white" : "text-gray-300"}`}>B</span>
+            </button>
+            
+            <button
+              onClick={toggleItalic}
+              className={`flex-1 px-2 py-1 rounded ${selectedText.fontStyle === "italic" ? "bg-cyan-600" : "bg-gray-700 hover:bg-gray-600"} transition`}
+              title="Italic"
+            >
+              <span className={`italic ${selectedText.fontStyle === "italic" ? "text-white" : "text-gray-300"}`}>I</span>
+            </button>
+          </div>
+
+          {/* Text Alignment Buttons */}
+          <div>
+            <label className="text-sm text-gray-400 mb-1 block">Text Alignment</label>
+            <div className="flex gap-1">
+              {["left", "center", "right"].map((alignment) => (
+                <button
+                  key={alignment}
+                  onClick={() => setTextAlignment(alignment)}
+                  className={`flex-1 px-2 py-1 rounded ${selectedText.textAlign === alignment ? "bg-cyan-600" : "bg-gray-700 hover:bg-gray-600"} transition`}
+                  title={`Align ${alignment}`}
+                >
+                  <span className="text-white text-sm">
+                    {alignment === "left" ? "◀" : alignment === "center" ? "●" : "▶"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
           
           <div>
             <label className="text-sm text-gray-400 mb-1 block">Font Family</label>

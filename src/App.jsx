@@ -6,15 +6,15 @@ import { hexToRgb } from "./utils/colors";
 import "./index.css";
 
 export default function App() {
-  const width = 800;
-  const height = 400;
+  const baseWidth = 800;
+  const baseHeight = 400;
 
   const [elements, setElements] = useState([]);
   const [glowColor, setGlowColor] = useState("#00faff");
   const [roundedEdges, setRoundedEdges] = useState(false);
   const [selectedElement, setSelectedElement] = useState(null);
   const [fontFamily, setFontFamily] = useState("Arial");
-  const [fontSize, setFontSize] = useState(36);
+  const [fontSize, setFontSize] = useState(32);
   const [isPowerOn, setIsPowerOn] = useState(true);
   const [brightness, setBrightness] = useState(80);
   const [glowMode, setGlowMode] = useState("rainbow");
@@ -52,12 +52,12 @@ export default function App() {
       id: Date.now(),
       type: "text",
       content: "Customize your LED panel",
-      x: width / 2 - 200,
-      y: height / 2 - 30,
+      x: baseWidth / 2 - 200,
+      y: baseHeight / 2 - 30,
       width: 400,
       height: 60,
       fontFamily: "Impact",
-      fontSize: 36,
+      fontSize: 32,
     };
     setElements([placeholderElement]);
     setSelectedElement(placeholderElement.id);
@@ -95,21 +95,34 @@ export default function App() {
 
         {/* Center Panel */}
         <div className="flex-1 flex flex-col items-center justify-center border-x border-gray-700 overflow-hidden">
-          <Panel
-            elements={elements}
-            setElements={setElements}
-            selectedElement={selectedElement}
-            setSelectedElement={setSelectedElement}
-            glowColor={glowColor}
-            isPowerOn={isPowerOn}
-            roundedEdges={roundedEdges}
-            width={width}
-            height={height}
-            glowMode={glowMode}
-            brightness={brightness}
-            speed={speed}
-            showLedBorder={showLedBorder}
-          />
+          <div
+            className="w-full max-w-5xl flex justify-center items-center"
+            style={{
+              paddingLeft: "40px",
+              paddingRight: "40px",
+              paddingTop: "20px",
+              paddingBottom: "20px",
+            }}
+          >
+            {/* Responsive aspect-ratio box */}
+            <div className="relative w-full aspect-[2/1] flex items-center justify-center">
+              <Panel
+                elements={elements}
+                setElements={setElements}
+                selectedElement={selectedElement}
+                setSelectedElement={setSelectedElement}
+                glowColor={glowColor}
+                isPowerOn={isPowerOn}
+                roundedEdges={roundedEdges}
+                width={baseWidth}
+                height={baseHeight}
+                glowMode={glowMode}
+                brightness={brightness}
+                speed={speed}
+                showLedBorder={showLedBorder}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Right Sidebar (scroll target) */}
