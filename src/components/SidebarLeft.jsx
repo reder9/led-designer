@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { iconComponentMap } from "../utils/iconMap";
 
 export default function SidebarLeft({
@@ -31,6 +31,14 @@ export default function SidebarLeft({
     name: key,
     Icon: iconComponentMap[key],
   }));
+
+  // Local state for the input value to handle typing
+  const [fontSizeInput, setFontSizeInput] = useState(fontSize.toString());
+
+  // Update local input when fontSize prop changes
+  React.useEffect(() => {
+    setFontSizeInput(fontSize.toString());
+  }, [fontSize]);
 
   const addText = () => {
     const newElement = {
@@ -86,11 +94,48 @@ export default function SidebarLeft({
   };
 
   const updateFontSize = (size) => {
-    setFontSize(size);
+    // Ensure the size is within reasonable bounds
+    const newSize = Math.max(8, Math.min(200, size));
+    setFontSize(newSize);
     if (selectedElement) {
       setElements(elements.map(el => 
-        el.id === selectedElement ? { ...el, fontSize: size } : el
+        el.id === selectedElement ? { ...el, fontSize: newSize } : el
       ));
+    }
+  };
+
+  const incrementFontSize = () => {
+    updateFontSize(fontSize + 1);
+  };
+
+  const decrementFontSize = () => {
+    updateFontSize(fontSize - 1);
+  };
+
+  const handleFontSizeInputChange = (e) => {
+    // Update the input value as user types
+    setFontSizeInput(e.target.value);
+  };
+
+  const handleFontSizeInputBlur = (e) => {
+    // Only update the actual font size when user finishes typing
+    const value = parseInt(e.target.value);
+    if (!isNaN(value)) {
+      updateFontSize(value);
+    } else {
+      // If invalid input, revert to current fontSize
+      setFontSizeInput(fontSize.toString());
+    }
+  };
+
+  const handleFontSizeInputKeyPress = (e) => {
+    // Update on Enter key as well
+    if (e.key === 'Enter') {
+      const value = parseInt(e.target.value);
+      if (!isNaN(value)) {
+        updateFontSize(value);
+      }
+      e.target.blur(); // Remove focus after pressing Enter
     }
   };
 
@@ -148,7 +193,7 @@ export default function SidebarLeft({
     const svgString = `${svgHeader}\n${rect}\n${svgContent}\n${svgFooter}`;
 
     const blob = new Blob([svgString], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
+    const url = URL.revokeObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = "panel-export.svg";
@@ -215,15 +260,31 @@ export default function SidebarLeft({
 
           <div>
             <label className="text-sm text-gray-400 mb-1 block">Font Size</label>
-            <input
-              type="range"
-              min="8"
-              max="72"
-              value={fontSize}
-              onChange={(e) => updateFontSize(parseInt(e.target.value))}
-              className="w-full"
-            />
-            <div className="text-xs text-gray-400 text-center">{fontSize}px</div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={decrementFontSize}
+                disabled={fontSize <= 8}
+                className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                -
+              </button>
+              <input
+                type="text"
+                value={fontSizeInput}
+                onChange={handleFontSizeInputChange}
+                onBlur={handleFontSizeInputBlur}
+                onKeyPress={handleFontSizeInputKeyPress}
+                className="w-16 p-1 text-center bg-gray-800 border border-gray-700 rounded text-white"
+              />
+              <button
+                onClick={incrementFontSize}
+                disabled={fontSize >= 200}
+                className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                +
+              </button>
+            </div>
+            <div className="text-xs text-gray-400 text-center mt-1">{fontSize}px</div>
           </div>
         </div>
       )}

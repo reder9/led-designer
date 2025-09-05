@@ -1,43 +1,110 @@
+// Updated useKeyboardShortcuts hook
 import { useEffect } from "react";
 
 export default function useKeyboardShortcuts({
-  onUndo,
-  onRedo,
-  onCopy,
-  onPaste,
-  onDelete,
+  undo,
+  redo,
+  deleteSelected,
+  copy,
+  cut,
+  paste,
+  duplicate,
+  selectedElement,
+  isEditing,
+  setIsEditing,
+  setSelectedElement,
 }) {
   useEffect(() => {
-    const handler = (e) => {
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key.toLowerCase()) {
-          case "z":
-            e.preventDefault();
-            onUndo && onUndo();
-            break;
-          case "y":
-            e.preventDefault();
-            onRedo && onRedo();
-            break;
-          case "c":
-            e.preventDefault();
-            onCopy && onCopy();
-            break;
-          case "v":
-            e.preventDefault();
-            onPaste && onPaste();
-            break;
-          default:
-            break;
-        }
+    const handleKeyDown = (e) => {
+      // Check if user is typing in a text input/textarea
+      const target = e.target;
+      const isTextInput = target.tagName === "TEXTAREA" || 
+                          target.tagName === "INPUT" || 
+                          target.isContentEditable;
+      
+      // Don't handle shortcuts if user is editing text (unless it's Escape)
+      if (isTextInput && e.key !== "Escape") {
+        return; // Allow normal text editing behavior
       }
-      if (e.key === "Delete" || e.key === "Backspace") {
-        e.preventDefault();
-        onDelete && onDelete();
+
+      const ctrlOrCmd = e.ctrlKey || e.metaKey;
+
+      switch (e.key) {
+        case "Delete":
+        case "Backspace":
+          // Only prevent default if not editing and we have a selected element
+          if (selectedElement && !isEditing) {
+            e.preventDefault();
+            deleteSelected();
+          }
+          break;
+        case "z":
+          if (ctrlOrCmd && !e.shiftKey) {
+            e.preventDefault();
+            undo();
+          }
+          break;
+        case "Z":
+          if (ctrlOrCmd && e.shiftKey) {
+            e.preventDefault();
+            redo();
+          }
+          break;
+        case "c":
+          if (ctrlOrCmd && selectedElement) {
+            e.preventDefault();
+            copy();
+          }
+          break;
+        case "x":
+          if (ctrlOrCmd && selectedElement) {
+            e.preventDefault();
+            cut();
+          }
+          break;
+        case "v":
+          if (ctrlOrCmd) {
+            e.preventDefault();
+            paste();
+          }
+          break;
+        case "d":
+          if (ctrlOrCmd && selectedElement) {
+            e.preventDefault();
+            duplicate();
+          }
+          break;
+        case "Escape":
+          if (isEditing) {
+            e.preventDefault();
+            setIsEditing(false);
+          } else if (selectedElement) {
+            e.preventDefault();
+            setSelectedElement(null);
+          }
+          break;
+        case "Enter":
+          if (selectedElement && !isEditing) {
+            e.preventDefault();
+            setIsEditing(true);
+          }
+          break;
       }
     };
 
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onUndo, onRedo, onCopy, onPaste, onDelete]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    undo,
+    redo,
+    deleteSelected,
+    copy,
+    cut,
+    paste,
+    duplicate,
+    selectedElement,
+    isEditing,
+    setIsEditing,
+    setSelectedElement,
+  ]);
 }
