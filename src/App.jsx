@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import Panel from "./components/Panel";
 import SidebarLeft from "./components/SidebarLeft";
 import SidebarRight from "./components/SidebarRight";
-import { hexToRgb } from "./utils/colors";
 import "./index.css";
 
 export default function App() {
@@ -20,11 +19,21 @@ export default function App() {
   const [glowMode, setGlowMode] = useState("rainbow");
   const [showLedBorder, setShowLedBorder] = useState(true);
   const [speed, setSpeed] = useState(3);
+  const [isMobile, setIsMobile] = useState(false);
 
   const sidebarRef = useRef(null);
 
-  // Mirror body scroll into sidebar scroll
+  // Detect mobile
   useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Mirror body scroll into sidebar scroll (desktop only)
+  useEffect(() => {
+    if (isMobile) return;
     const handleScroll = () => {
       if (sidebarRef.current) {
         sidebarRef.current.scrollTop = window.scrollY;
@@ -32,10 +41,11 @@ export default function App() {
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isMobile]);
 
-  // Expand body height equal to sidebar’s scroll height
+  // Expand body height to match sidebar scroll height (desktop only)
   useEffect(() => {
+    if (isMobile) return;
     const updateBodyHeight = () => {
       if (sidebarRef.current) {
         document.body.style.height = `${sidebarRef.current.scrollHeight}px`;
@@ -44,9 +54,9 @@ export default function App() {
     updateBodyHeight();
     window.addEventListener("resize", updateBodyHeight);
     return () => window.removeEventListener("resize", updateBodyHeight);
-  }, []);
+  }, [isMobile]);
 
-  // Initialize with placeholder text
+  // Initialize placeholder text
   useEffect(() => {
     const placeholderElement = {
       id: Date.now(),
@@ -66,89 +76,146 @@ export default function App() {
   return (
     <div className="h-screen flex flex-col overflow-hidden fixed inset-0">
       {/* Header */}
-      <header className="w-full py-4 text-center bg-gray-900 shadow-md flex-shrink-0">
-        <h1 className="text-3xl font-bold text-cyan-400 tracking-wide">
+      <header className="w-full py-3 text-center bg-gray-900 shadow-md flex-shrink-0">
+        <h1 className="text-2xl md:text-3xl font-bold text-cyan-400 tracking-wide">
           LED Panel Designer
         </h1>
       </header>
 
       {/* Main Content */}
-      <div className="flex flex-1 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
-        {/* Left Sidebar */}
-        <div className="w-80 bg-gray-900 flex-shrink-0 overflow-hidden">
-          <SidebarLeft
-            elements={elements}
-            setElements={setElements}
-            selectedElement={selectedElement}
-            setSelectedElement={setSelectedElement}
-            fontFamily={fontFamily}
-            setFontFamily={setFontFamily}
-            fontSize={fontSize}
-            setFontSize={setFontSize}
-            roundedEdges={roundedEdges}
-            setRoundedEdges={setRoundedEdges}
-            glowColor={glowColor}
-            showLedBorder={showLedBorder}
-            setShowLedBorder={setShowLedBorder}
-          />
-        </div>
-
-        {/* Center Panel */}
-        <div className="flex-1 flex flex-col items-center justify-center border-x border-gray-700 overflow-hidden">
-          <div
-            className="w-full max-w-5xl flex justify-center items-center"
-            style={{
-              paddingLeft: "40px",
-              paddingRight: "40px",
-              paddingTop: "20px",
-              paddingBottom: "20px",
-            }}
-          >
-            {/* Responsive aspect-ratio box */}
-            <div className="relative w-full aspect-[2/1] flex items-center justify-center">
-              <Panel
-                elements={elements}
-                setElements={setElements}
-                selectedElement={selectedElement}
-                setSelectedElement={setSelectedElement}
-                glowColor={glowColor}
-                isPowerOn={isPowerOn}
-                roundedEdges={roundedEdges}
-                width={baseWidth}
-                height={baseHeight}
-                glowMode={glowMode}
-                brightness={brightness}
-                speed={speed}
-                showLedBorder={showLedBorder}
-              />
+      {isMobile ? (
+        // --- MOBILE LAYOUT: Panel → Left Sidebar → Right Sidebar
+        <div className="flex-1 flex flex-col bg-gradient-to-br from-gray-800 to-gray-900 overflow-y-auto">
+          {/* Panel on top */}
+          <div className="flex-1 flex items-center justify-center border-b border-gray-700 p-4">
+            <div className="w-full max-w-5xl">
+              <div className="relative w-full aspect-[2/1] flex items-center justify-center">
+                <Panel
+                  elements={elements}
+                  setElements={setElements}
+                  selectedElement={selectedElement}
+                  setSelectedElement={setSelectedElement}
+                  glowColor={glowColor}
+                  isPowerOn={isPowerOn}
+                  roundedEdges={roundedEdges}
+                  width={baseWidth}
+                  height={baseHeight}
+                  glowMode={glowMode}
+                  brightness={brightness}
+                  speed={speed}
+                  showLedBorder={showLedBorder}
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Sidebar (scroll target) */}
-        <div
-          ref={sidebarRef}
-          className="w-80 bg-gray-800 flex-shrink-0 overflow-hidden"
-        >
-          <SidebarRight
-            glowColor={glowColor}
-            setGlowColor={setGlowColor}
-            isPowerOn={isPowerOn}
-            setIsPowerOn={setIsPowerOn}
-            brightness={brightness}
-            setBrightness={setBrightness}
-            glowMode={glowMode}
-            setGlowMode={setGlowMode}
-            speed={speed}
-            setSpeed={setSpeed}
-          />
+          {/* Left Sidebar (middle) */}
+          <div className="bg-gray-900 border-b border-gray-700 p-4">
+            <SidebarLeft
+              elements={elements}
+              setElements={setElements}
+              selectedElement={selectedElement}
+              setSelectedElement={setSelectedElement}
+              fontFamily={fontFamily}
+              setFontFamily={setFontFamily}
+              fontSize={fontSize}
+              setFontSize={setFontSize}
+              roundedEdges={roundedEdges}
+              setRoundedEdges={setRoundedEdges}
+              glowColor={glowColor}
+              showLedBorder={showLedBorder}
+              setShowLedBorder={setShowLedBorder}
+            />
+          </div>
+
+          {/* Right Sidebar (bottom remote) */}
+          <div className="bg-gray-800 p-4">
+            <SidebarRight
+              glowColor={glowColor}
+              setGlowColor={setGlowColor}
+              isPowerOn={isPowerOn}
+              setIsPowerOn={setIsPowerOn}
+              brightness={brightness}
+              setBrightness={setBrightness}
+              glowMode={glowMode}
+              setGlowMode={setGlowMode}
+              speed={speed}
+              setSpeed={setSpeed}
+            />
+          </div>
         </div>
-      </div>
+      ) : (
+        // --- DESKTOP LAYOUT: Left Sidebar → Panel → Right Sidebar
+        <div className="flex flex-1 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
+          {/* Left Sidebar */}
+          <div className="w-80 bg-gray-900 flex-shrink-0 overflow-hidden">
+            <SidebarLeft
+              elements={elements}
+              setElements={setElements}
+              selectedElement={selectedElement}
+              setSelectedElement={setSelectedElement}
+              fontFamily={fontFamily}
+              setFontFamily={setFontFamily}
+              fontSize={fontSize}
+              setFontSize={setFontSize}
+              roundedEdges={roundedEdges}
+              setRoundedEdges={setRoundedEdges}
+              glowColor={glowColor}
+              showLedBorder={showLedBorder}
+              setShowLedBorder={setShowLedBorder}
+            />
+          </div>
+
+          {/* Center Panel */}
+          <div className="flex-1 flex flex-col items-center justify-center border-x border-gray-700 overflow-hidden">
+            <div
+              className="w-full max-w-5xl flex justify-center items-center p-6"
+            >
+              <div className="relative w-full aspect-[2/1] flex items-center justify-center">
+                <Panel
+                  elements={elements}
+                  setElements={setElements}
+                  selectedElement={selectedElement}
+                  setSelectedElement={setSelectedElement}
+                  glowColor={glowColor}
+                  isPowerOn={isPowerOn}
+                  roundedEdges={roundedEdges}
+                  width={baseWidth}
+                  height={baseHeight}
+                  glowMode={glowMode}
+                  brightness={brightness}
+                  speed={speed}
+                  showLedBorder={showLedBorder}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Sidebar */}
+          <div
+            ref={sidebarRef}
+            className="w-80 bg-gray-800 flex-shrink-0 overflow-hidden"
+          >
+            <SidebarRight
+              glowColor={glowColor}
+              setGlowColor={setGlowColor}
+              isPowerOn={isPowerOn}
+              setIsPowerOn={setIsPowerOn}
+              brightness={brightness}
+              setBrightness={setBrightness}
+              glowMode={glowMode}
+              setGlowMode={setGlowMode}
+              speed={speed}
+              setSpeed={setSpeed}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
-      <footer className="bg-gray-900 border-t border-gray-800 py-4 px-4 flex-shrink-0">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
-          <div className="flex items-center mb-4 md:mb-0">
+      <footer className="bg-gray-900 border-t border-gray-800 py-3 px-4 flex-shrink-0">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-center md:text-left">
+          <div className="flex items-center justify-center md:justify-start mb-3 md:mb-0">
             <span className="text-gray-400 mr-2">Created by</span>
             <span className="font-semibold text-white bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
               RederSoft / RederCraft
@@ -159,7 +226,7 @@ export default function App() {
             href="https://www.etsy.com/shop/RederCraft"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-cyan-500/25"
+            className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-cyan-500/25"
           >
             Visit Our Etsy Shop
           </a>

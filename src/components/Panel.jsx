@@ -303,8 +303,17 @@ export default function Panel({
             onClick={(e) => handleElementClick(e, el)}
             onDoubleClick={(e) => handleElementClick(e, el)}
             onContextMenu={(e) => handleContextMenu(e, el.id)}
-            enableResizing={!isEditing}
-            enableDragging={!isEditing}
+            disableDragging={isEditing}
+            enableResizing={{
+              top: !isEditing,
+              right: !isEditing,
+              bottom: !isEditing,
+              left: !isEditing,
+              topRight: !isEditing,
+              bottomRight: !isEditing,
+              bottomLeft: !isEditing,
+              topLeft: !isEditing
+            }}
           >
             <ElementRenderer
               el={el}

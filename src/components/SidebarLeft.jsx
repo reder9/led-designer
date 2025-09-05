@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, Fragment } from "react";
 import { iconComponentMap } from "../utils/iconMap";
 
 export default function SidebarLeft({
@@ -14,7 +14,7 @@ export default function SidebarLeft({
   setRoundedEdges,
   glowColor,
   width = 800,
-  height = 600,
+  height = 400,
 }) {
   const fontOptions = [
     "Arial", "Helvetica", "Verdana", "Tahoma",
@@ -60,10 +60,12 @@ export default function SidebarLeft({
   };
 
   const addIcon = () => {
+    const defaultKey = "twitch"; // or any key from iconComponentMap
     const newElement = {
       id: Date.now(),
       type: "icon",
-      content: "twitch", // default to one of the map keys
+      content: defaultKey,
+      iconKey: defaultKey,
       x: 150,
       y: 150,
       width: 60,
@@ -83,7 +85,7 @@ export default function SidebarLeft({
     if (selectedElement) {
       setElements(elements.map(el =>
         el.id === selectedElement && el.type === "icon"
-          ? { ...el, content: icon.name }
+          ? { ...el, content: icon.name, iconKey: icon.name }
           : el
       ));
     }
@@ -168,65 +170,126 @@ export default function SidebarLeft({
     }
   };
 
-  // --- Export SVG Function ---
+    // --- Export SVG Function ---
   const exportAsSVG = () => {
+    // Ensure 2:1 ratio dimensions (width is twice the height)
     const panelWidth = 800;
     const panelHeight = 400;
 
-    const svgHeader = `<svg xmlns="http://www.w3.org/2000/svg" width="${panelWidth}" height="${panelHeight}" viewBox="0 0 ${panelWidth} ${panelHeight}">`;
+    // Create SVG with proper dimensions and viewBox
+    const svgHeader = `<?xml version="1.0" encoding="UTF-8"?>
+      <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        xmlns:xlink="http://www.w3.org/1999/xlink" 
+        width="${panelWidth}" 
+        height="${panelHeight}" 
+        viewBox="0 0 ${panelWidth} ${panelHeight}"
+        preserveAspectRatio="xMidYMid meet"
+        style="overflow: visible;"
+      >`;
     const svgFooter = `</svg>`;
 
+    // Background rectangle with proper dimensions and rounded corners
     const rect = `
       <rect
-        x="0" y="0"
-        width="${panelWidth}" height="${panelHeight}"
+        x="0"
+        y="0"
+        width="${panelWidth}"
+        height="${panelHeight}"
         fill="black"
         rx="${roundedEdges ? 20 : 0}"
         ry="${roundedEdges ? 20 : 0}"
       />`;
 
-    const svgContent = elements.map(el => {
-      const x = el.x + el.width / 2;
-      const y = el.y + el.height / 2;
+    // Add defs section for icon paths
+    const iconSymbols = Object.entries(iconComponentMap).map(([key, Icon]) => {
+      return `
+        <symbol id="icon-${key}" viewBox="0 0 24 24">
+          <path d="M11 7H13V9H11V7ZM11 11H13V17H11V11ZM12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z"/>
+        </symbol>
+      `;
+    });
 
+    const defs = `
+      <defs>
+        ${iconSymbols.join('\n')}
+      </defs>
+    `;
+
+    const svgContent = elements.map(el => {
       if (el.type === "text") {
         const fontWeight = el.fontWeight || "normal";
         const fontStyle = el.fontStyle || "normal";
         const textAnchor = el.textAlign === "left" ? "start" : 
                           el.textAlign === "right" ? "end" : "middle";
         
-        return `
-          <text
-            x="${textAnchor === "middle" ? x : textAnchor === "start" ? el.x + 5 : el.x + el.width - 5}"
-            y="${y}"
-            font-family="${el.fontFamily}"
-            font-size="${el.fontSize}"
-            font-weight="${fontWeight}"
-            font-style="${fontStyle}"
-            text-anchor="${textAnchor}"
-            alignment-baseline="middle"
-            fill="${glowColor}"
-          >
-            ${el.content}
-          </text>`;
-      } else if (el.type === "icon") {
+        // Calculate exact x position based on alignment
+        let x;
+        if (el.textAlign === "left") {
+          x = el.x;
+        } else if (el.textAlign === "right") {
+          // For right-aligned text, we need to account for the actual text width
+          x = Math.min(el.x + el.width, panelWidth - 2); // Keep 2px margin from edge
+        } else {
+          x = el.x + (el.width / 2);
+        }
+        
+        // Calculate exact y position (vertical center)
+        const y = el.y + (el.height / 2);
+        
         return `
           <text
             x="${x}"
             y="${y}"
             font-family="${el.fontFamily}"
             font-size="${el.fontSize}"
-            text-anchor="middle"
-            alignment-baseline="middle"
+            font-weight="${fontWeight}"
+            font-style="${fontStyle}"
+            text-anchor="${textAnchor}"
+            dominant-baseline="middle"
             fill="${glowColor}"
+            style="filter: url(#glow)"
           >
             ${el.content}
           </text>`;
+      } else if (el.type === "icon" && el.content) {
+        // Use a simple SVG shape for icons in the export
+        return `
+          <g transform="translate(${el.x},${el.y})">
+            <rect
+              width="${el.width}"
+              height="${el.height}"
+              fill="none"
+            />
+            <use
+              href="#icon-${el.content}"
+              width="${el.width}"
+              height="${el.height}"
+              fill="${glowColor}"
+              style="filter: url(#glow)"
+            />
+          </g>`;
       }
       return "";
     }).join("\n");
 
-    const svgString = `${svgHeader}\n${rect}\n${svgContent}\n${svgFooter}`;
+    // Enhanced glow filter
+    const glowFilter = `
+      <defs>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+          <feFlood flood-color="${glowColor}" flood-opacity="0.5" result="glowColor"/>
+          <feComposite in="glowColor" in2="coloredBlur" operator="in" result="softGlow"/>
+          <feMerge>
+            <feMergeNode in="softGlow"/>
+            <feMergeNode in="softGlow"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+    `;
+
+    const svgString = `${svgHeader}\n${glowFilter}\n${defs}\n${rect}\n${svgContent}\n${svgFooter}`;
 
     const blob = new Blob([svgString], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
@@ -250,30 +313,47 @@ export default function SidebarLeft({
         ⭐ Add Icon
       </button>
 
-      {/* Icon Picker */}
+      {/* Icon Controls */}
       {selectedIcon && (
-        <div className="mt-4">
-          <h3 className="text-sm font-semibold text-blue-400 mb-2">Icon Picker</h3>
-          <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto p-2 bg-gray-800 rounded">
-            {iconOptions.map((icon, index) => {
-              const { Icon } = icon;
-              return (
-                <button
-                  key={index}
-                  onClick={() => updateIconContent(icon)}
-                  className="w-8 h-8 flex items-center justify-center text-white text-lg hover:bg-gray-700 rounded transition"
-                  style={{
-                    textShadow: `0 0 5px ${glowColor}`,
-                    backgroundColor: selectedIcon.content === icon.name ? glowColor : "transparent",
-                  }}
-                  title={`Select ${icon.name}`}
-                >
-                  {Icon ? <Icon /> : "?"}
-                </button>
-              );
-            })}
+        <>
+          <div className="mt-4 flex justify-between items-center">
+            <h3 className="text-sm font-semibold text-blue-400">Icon Controls</h3>
+            <button
+              onClick={() => {
+                const updatedElements = elements.filter(el => el.id !== selectedElement);
+                setElements(updatedElements);
+                setSelectedElement(null);
+              }}
+              className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+              title="Delete Icon"
+            >
+              Delete
+            </button>
           </div>
-        </div>
+          
+          <div className="mt-4">
+            <h4 className="text-sm font-semibold text-blue-400 mb-2">Icon Style</h4>
+            <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto p-2 bg-gray-800 rounded">
+              {iconOptions.map((icon, index) => {
+                const { Icon } = icon;
+                return (
+                  <button
+                    key={index}
+                    onClick={() => updateIconContent(icon)}
+                    className="w-8 h-8 flex items-center justify-center text-white text-lg hover:bg-gray-700 rounded transition"
+                    style={{
+                      textShadow: `0 0 5px ${glowColor}`,
+                      backgroundColor: selectedIcon.content === icon.name ? glowColor : "transparent",
+                    }}
+                    title={`Select ${icon.name}`}
+                  >
+                    {Icon ? <Icon /> : "?"}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
       )}
 
       {/* Text Formatting Controls */}

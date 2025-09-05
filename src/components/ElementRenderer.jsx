@@ -121,7 +121,7 @@ export default function ElementRenderer({
     const IconComp = iconComponentMap[el.iconKey];
     return (
       <div
-        className="w-full h-full flex items-center justify-center"
+        className="w-full h-full flex items-center justify-center relative"
         style={{
           color: isPowerOn ? glowColor : "#555",
           opacity: elementOpacity,
@@ -130,10 +130,11 @@ export default function ElementRenderer({
                brightness(${1 + glowIntensity * 0.5})`
             : "none",
           transition: "all 0.3s ease",
-          cursor: "move",
+          cursor: isEditing ? "text" : "move",
+          border: selected ? "1px dashed cyan" : "none",
         }}
       >
-        <IconComp className="w-3/4 h-3/4" />
+        <IconComp style={{ width: '100%', height: '100%' }} />
       </div>
     );
   }
