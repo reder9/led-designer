@@ -1,0 +1,25 @@
+.element-wrapper {
+  touch-action: none;
+  user-select: none;
+}
+
+.element-wrapper:active {
+  cursor: move;
+  opacity: 1 !important;
+  z-index: 1000;
+}
+
+/* Improve drag performance */
+.element-wrapper > div {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform;
+}
+
+/* Ensure the element stays visible during drag */
+.react-draggable-dragging {
+  opacity: 1 !important;
+  z-index: 1000 !important;
+  pointer-events: auto !important;
+}

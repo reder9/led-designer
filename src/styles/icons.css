@@ -1,0 +1,67 @@
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 0 -4px;
+}
+
+.icon-category {
+  margin-bottom: 1.5rem;
+}
+
+.icon-category:last-child {
+  margin-bottom: 0.5rem;
+}
+
+.icon-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  background: rgba(31, 41, 55, 0.5);
+  border: 1px solid rgba(75, 85, 99, 0.2);
+  aspect-ratio: 1;
+  cursor: pointer;
+}
+
+.icon-item:hover {
+  background: rgba(55, 65, 81, 0.7);
+  transform: translateY(-1px);
+}
+
+.icon-item.selected {
+  background: rgb(37, 99, 235);
+  border-color: rgb(59, 130, 246);
+}
+
+.icon-preview {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.icon-label {
+  margin-top: 0.25rem;
+  font-size: 0.625rem;
+  color: rgba(156, 163, 175, 0.9);
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon-item:hover .icon-label {
+  color: rgba(209, 213, 219, 1);
+}
+
+.icon-item.selected .icon-label {
+  color: white;
+}

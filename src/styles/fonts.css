@@ -1,0 +1,150 @@
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Icon Grid Styles */
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 8px;
+  padding: 4px;
+}
+
+.icon-item {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  padding: 8px;
+}
+
+.icon-item:hover {
+  transform: translateY(-2px);
+}
+
+.icon-preview {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-label {
+  font-size: 10px;
+  margin-top: 4px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Russo+One&family=Orbitron:wght@400;500;600;700;800;900&family=Play:wght@400;700&family=Rajdhani:wght@300;400;500;600;700&family=Chakra+Petch:wght@300;400;500;600;700&family=Audiowide&family=Teko:wght@300;400;500;600;700&family=Aldrich&family=Quantico:wght@400;700&family=Oxanium:wght@200;300;400;500;600;700;800&family=Iceland&family=Syncopate:wght@400;700&family=Wallpoet&family=Press+Start+2P&family=VT323&family=Share+Tech+Mono&family=Nova+Square&family=Michroma&family=Stalinist+One&family=Rubik+Mono+One&family=Faster+One&family=Monoton&display=swap');
+
+/* Gaming and streaming-specific font classes */
+.font-orbitron {
+  font-family: 'Orbitron', sans-serif;
+}
+
+.font-play {
+  font-family: 'Play', sans-serif;
+}
+
+.font-rajdhani {
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.font-chakra {
+  font-family: 'Chakra Petch', sans-serif;
+}
+
+.font-audiowide {
+  font-family: 'Audiowide', cursive;
+}
+
+.font-teko {
+  font-family: 'Teko', sans-serif;
+}
+
+.font-aldrich {
+  font-family: 'Aldrich', sans-serif;
+}
+
+.font-quantico {
+  font-family: 'Quantico', sans-serif;
+}
+
+.font-oxanium {
+  font-family: 'Oxanium', cursive;
+}
+
+.font-iceland {
+  font-family: 'Iceland', cursive;
+}
+
+.font-syncopate {
+  font-family: 'Syncopate', sans-serif;
+}
+
+.font-wallpoet {
+  font-family: 'Wallpoet', cursive;
+}
+
+.font-press-start {
+  font-family: 'Press Start 2P', cursive;
+}
+
+.font-vt323 {
+  font-family: 'VT323', monospace;
+}
+
+.font-share-tech {
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.font-nova-square {
+  font-family: 'Nova Square', cursive;
+}
+
+.font-michroma {
+  font-family: 'Michroma', sans-serif;
+}
+
+.font-stalinist {
+  font-family: 'Stalinist One', cursive;
+}
+
+.font-rubik-mono {
+  font-family: 'Rubik Mono One', sans-serif;
+}
+
+.font-faster-one {
+  font-family: 'Faster One', cursive;
+}
+
+.font-monoton {
+  font-family: 'Monoton', cursive;
+}
+
+.font-russo-one {
+  font-family: 'Russo One', sans-serif;
+}
