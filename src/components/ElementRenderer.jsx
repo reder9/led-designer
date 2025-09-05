@@ -125,16 +125,18 @@ export default function ElementRenderer({
         style={{
           color: isPowerOn ? glowColor : "#555",
           opacity: elementOpacity,
-          filter: isPowerOn 
-            ? `drop-shadow(0 0 ${8 * glowIntensity}px ${glowColor}) 
-               brightness(${1 + glowIntensity * 0.5})`
-            : "none",
+          filter: `drop-shadow(0 0 ${10 * textGlowIntensity}px currentColor) 
+                  drop-shadow(0 0 ${20 * textGlowIntensity}px currentColor)`,
           transition: "all 0.3s ease",
-          cursor: isEditing ? "text" : "move",
+          cursor: "move",
           border: selected ? "1px dashed cyan" : "none",
+          animation: glowMode === "rainbow" ? "rainbowText 3s linear infinite" : "none",
+          pointerEvents: "auto",
+          transform: "translate3d(0, 0, 0)", // Force GPU acceleration
+          willChange: "transform", // Optimize for animations
         }}
       >
-        <IconComp style={{ width: '100%', height: '100%' }} />
+        <IconComp style={{ width: '100%', height: '100%', pointerEvents: "none" }} />
       </div>
     );
   }

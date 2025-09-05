@@ -4,6 +4,7 @@ import useHistory from "../hooks/useHistory";
 import useClipboard from "../hooks/useClipboard";
 import useKeyboardShortcuts from "../hooks/useKeyboardShortcuts";
 import useSnapping from "../hooks/useSnapping";
+import "./Panel.css";
 import { createContextMenu } from "../utils/contextMenu";
 import ElementRenderer from "./ElementRenderer";
 import SnappingGuides from "./SnappingGuides";
@@ -279,36 +280,109 @@ export default function Panel({
             size={{ width: el.width, height: el.height }}
             position={{ x: el.x, y: el.y }}
             bounds="parent"
-            onDragStart={() => setIsDragging(true)}
-            onDrag={(e, d) => applySnapping(el, d.x, d.y)}
+            className="element-wrapper"
+            onDragStart={(e, d) => {
+              setIsDragging(true);
+              setSelectedElement(el.id);
+            }}
+            onDrag={(e, d) => {
+              const snapped = applySnapping(el, d.x, d.y);
+              // Update position immediately for live preview
+              setElements(prev => 
+                prev.map(x => x.id === el.id ? { ...x, x: snapped.x, y: snapped.y } : x)
+              );
+            }}
             onDragStop={(e, d) => {
               setIsDragging(false);
               const snapped = applySnapping(el, d.x, d.y);
-              setElements((prev) => {
-                const updated = prev.map((x) =>
-                  x.id === el.id ? { ...x, ...snapped } : x
-                );
-                saveToHistory(updated);
-                return updated;
+
+              // Check for collisions with other elements
+              const wouldCollide = elements.some(otherEl => {
+                if (otherEl.id === el.id) return false;
+                
+                // Calculate boundaries for both elements
+                const thisRect = {
+                  left: snapped.x,
+                  right: snapped.x + el.width,
+                  top: snapped.y,
+                  bottom: snapped.y + el.height
+                };
+                
+                const otherRect = {
+                  left: otherEl.x,
+                  right: otherEl.x + otherEl.width,
+                  top: otherEl.y,
+                  bottom: otherEl.y + otherEl.height
+                };
+
+                // Check for overlap
+                return !(thisRect.right < otherRect.left || 
+                        thisRect.left > otherRect.right || 
+                        thisRect.bottom < otherRect.top || 
+                        thisRect.top > otherRect.bottom);
               });
+
+              if (wouldCollide) {
+                // If there would be a collision, revert to original position
+                setElements(prev => [...prev]);
+              } else {
+                // If no collision, update position
+                setElements((prev) => {
+                  const updated = prev.map((x) =>
+                    x.id === el.id ? { ...x, ...snapped } : x
+                  );
+                  saveToHistory(updated);
+                  return updated;
+                });
+              }
               clearGuides();
             }}
             onResizeStop={(e, dir, ref, delta, pos) => {
-              setElements((prev) => {
-                const updated = prev.map((x) =>
-                  x.id === el.id
-                    ? {
-                        ...x,
-                        x: pos.x,
-                        y: pos.y,
-                        width: +ref.style.width,
-                        height: +ref.style.height,
-                      }
-                    : x
-                );
-                saveToHistory(updated);
-                return updated;
+              // Check if the new size/position would cause collision
+              const wouldCollide = elements.some(otherEl => {
+                if (otherEl.id === el.id) return false;
+
+                const thisRect = {
+                  left: pos.x,
+                  right: pos.x + parseInt(ref.style.width),
+                  top: pos.y,
+                  bottom: pos.y + parseInt(ref.style.height)
+                };
+
+                const otherRect = {
+                  left: otherEl.x,
+                  right: otherEl.x + otherEl.width,
+                  top: otherEl.y,
+                  bottom: otherEl.y + otherEl.height
+                };
+
+                return !(thisRect.right < otherRect.left || 
+                        thisRect.left > otherRect.right || 
+                        thisRect.bottom < otherRect.top || 
+                        thisRect.top > otherRect.bottom);
               });
+
+              if (wouldCollide) {
+                // If there would be a collision, revert to original size/position
+                setElements(prev => [...prev]);
+              } else {
+                // If no collision, update size and position
+                setElements((prev) => {
+                  const updated = prev.map((x) =>
+                    x.id === el.id
+                      ? {
+                          ...x,
+                          x: pos.x,
+                          y: pos.y,
+                          width: +ref.style.width,
+                          height: +ref.style.height,
+                        }
+                      : x
+                  );
+                  saveToHistory(updated);
+                  return updated;
+                });
+              }
             }}
             onClick={(e) => handleElementClick(e, el)}
             onDoubleClick={(e) => handleElementClick(e, el)}

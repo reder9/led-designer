@@ -37,15 +37,45 @@ export default function SidebarLeft({
     setFontSizeInput(fontSize.toString());
   }, [fontSize]);
 
+  // Helper function to find a free space for new elements
+  const findFreeSpace = (width, height) => {
+    const gridSize = 20; // Grid size for positioning
+    const maxAttempts = 100; // Prevent infinite loop
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      // Try different positions in a grid pattern
+      const x = (attempt % 5) * gridSize + 50;
+      const y = Math.floor(attempt / 5) * gridSize + 50;
+
+      // Check if this position would cause a collision
+      const wouldCollide = elements.some(el => {
+        return !(x + width < el.x ||
+                x > el.x + el.width ||
+                y + height < el.y ||
+                y > el.y + el.height);
+      });
+
+      if (!wouldCollide) {
+        return { x, y };
+      }
+    }
+
+    // If no free space found, return a fallback position
+    return { x: 100, y: 100 };
+  };
+
   const addText = () => {
+    const elementSize = { width: 120, height: 40 };
+    const position = findFreeSpace(elementSize.width, elementSize.height);
+    
     const newElement = {
       id: Date.now(),
       type: "text",
       content: "Edit me",
-      x: 100,
-      y: 100,
-      width: 120,
-      height: 40,
+      x: position.x,
+      y: position.y,
+      width: elementSize.width,
+      height: elementSize.height,
       fontFamily,
       fontSize,
       fontWeight: "normal",
@@ -57,16 +87,19 @@ export default function SidebarLeft({
   };
 
   const addIcon = () => {
+    const elementSize = { width: 60, height: 60 };
+    const position = findFreeSpace(elementSize.width, elementSize.height);
     const defaultKey = "twitch"; // or any key from iconComponentMap
+    
     const newElement = {
       id: Date.now(),
       type: "icon",
       content: defaultKey,
       iconKey: defaultKey,
-      x: 150,
-      y: 150,
-      width: 60,
-      height: 60,
+      x: position.x,
+      y: position.y,
+      width: elementSize.width,
+      height: elementSize.height,
       fontFamily: "Arial",
       fontSize: 28,
     };
@@ -451,22 +484,117 @@ export default function SidebarLeft({
             </button>
           </div>
           
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-6">
             <h4 className="text-sm font-semibold text-blue-400">Available Icons</h4>
-            {Object.entries(iconComponentMap).map(([iconName, Icon]) => (
-              <button
-                key={iconName}
-                onClick={() => updateIconContent(iconName)}
-                className="w-8 h-8 flex items-center justify-center text-white text-lg hover:bg-gray-700 rounded transition"
-                style={{
-                  textShadow: `0 0 5px ${glowColor}`,
-                  backgroundColor: selectedIcon.content === iconName ? glowColor : "transparent",
-                }}
-                title={`Select ${iconName}`}
-              >
-                {Icon ? <Icon /> : "?"}
-              </button>
-            ))}
+            
+            {/* Stream Icons */}
+            <div className="space-y-2">
+              <h5 className="text-sm font-medium text-gray-400 border-b border-gray-700 pb-1">
+                🎥 Streaming Icons
+              </h5>
+              <div className="grid grid-cols-4 gap-2">
+                {Object.entries(iconComponentMap)
+                  .filter(([name]) => name.includes('twitch') || name.includes('youtube') || name.includes('stream'))
+                  .map(([iconName, Icon]) => (
+                    <button
+                      key={iconName}
+                      onClick={() => updateIconContent(iconName)}
+                      className="w-8 h-8 flex items-center justify-center text-white hover:bg-gray-700 rounded transition"
+                      style={{
+                        backgroundColor: selectedIcon.content === iconName ? glowColor : "transparent",
+                        boxShadow: selectedIcon.content === iconName ? `0 0 10px ${glowColor}` : 'none'
+                      }}
+                      title={`Select ${iconName}`}
+                    >
+                      {Icon ? <Icon /> : "?"}
+                    </button>
+                  ))}
+              </div>
+            </div>
+
+            {/* Gaming Icons */}
+            <div className="space-y-2">
+              <h5 className="text-sm font-medium text-gray-400 border-b border-gray-700 pb-1">
+                🎮 Gaming Icons
+              </h5>
+              <div className="grid grid-cols-4 gap-2">
+                {Object.entries(iconComponentMap)
+                  .filter(([name]) => name.includes('game') || name.includes('controller') || name.includes('play'))
+                  .map(([iconName, Icon]) => (
+                    <button
+                      key={iconName}
+                      onClick={() => updateIconContent(iconName)}
+                      className="w-8 h-8 flex items-center justify-center text-white hover:bg-gray-700 rounded transition"
+                      style={{
+                        backgroundColor: selectedIcon.content === iconName ? glowColor : "transparent",
+                        boxShadow: selectedIcon.content === iconName ? `0 0 10px ${glowColor}` : 'none'
+                      }}
+                      title={`Select ${iconName}`}
+                    >
+                      {Icon ? <Icon /> : "?"}
+                    </button>
+                  ))}
+              </div>
+            </div>
+
+            {/* Sports Icons */}
+            <div className="space-y-2">
+              <h5 className="text-sm font-medium text-gray-400 border-b border-gray-700 pb-1">
+                ⚽ Sports Icons
+              </h5>
+              <div className="grid grid-cols-4 gap-2">
+                {Object.entries(iconComponentMap)
+                  .filter(([name]) => name.includes('sport') || name.includes('ball') || name.includes('game'))
+                  .map(([iconName, Icon]) => (
+                    <button
+                      key={iconName}
+                      onClick={() => updateIconContent(iconName)}
+                      className="w-8 h-8 flex items-center justify-center text-white hover:bg-gray-700 rounded transition"
+                      style={{
+                        backgroundColor: selectedIcon.content === iconName ? glowColor : "transparent",
+                        boxShadow: selectedIcon.content === iconName ? `0 0 10px ${glowColor}` : 'none'
+                      }}
+                      title={`Select ${iconName}`}
+                    >
+                      {Icon ? <Icon /> : "?"}
+                    </button>
+                  ))}
+              </div>
+            </div>
+
+            {/* Other Icons */}
+            <div className="space-y-2">
+              <h5 className="text-sm font-medium text-gray-400 border-b border-gray-700 pb-1">
+                ✨ Other Icons
+              </h5>
+              <div className="grid grid-cols-4 gap-2">
+                {Object.entries(iconComponentMap)
+                  .filter(([name]) => 
+                    !name.includes('twitch') && 
+                    !name.includes('youtube') && 
+                    !name.includes('stream') &&
+                    !name.includes('game') && 
+                    !name.includes('controller') &&
+                    !name.includes('play') &&
+                    !name.includes('sport') && 
+                    !name.includes('ball')
+                  )
+                  .map(([iconName, Icon]) => (
+                    <button
+                      key={iconName}
+                      onClick={() => updateIconContent(iconName)}
+                      className="w-8 h-8 flex items-center justify-center text-white hover:bg-gray-700 rounded transition"
+                      style={{
+                        backgroundColor: selectedIcon.content === iconName ? glowColor : "transparent",
+                        boxShadow: selectedIcon.content === iconName ? `0 0 10px ${glowColor}` : 'none'
+                      }}
+                      title={`Select ${iconName}`}
+                    >
+                      {Icon ? <Icon /> : "?"}
+                    </button>
+                  ))}
+              </div>
+            </div>
           </div>
         </>
       )}
