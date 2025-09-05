@@ -300,6 +300,20 @@ export default function SidebarLeft({
       </defs>
     `;
 
+    // Create a map of icon content for direct embedding
+    const iconContentMap = {};
+    const parser = new DOMParser();
+
+    // Extract SVG content for each icon that's being used
+    elements.forEach(el => {
+      if (el.type === "icon" && el.content && !iconContentMap[el.content]) {
+        const symbolMatch = iconSymbols.match(new RegExp(`<symbol id="icon-${el.content}"[^>]*>(.*?)</symbol>`, 's'));
+        if (symbolMatch) {
+          iconContentMap[el.content] = symbolMatch[1].trim();
+        }
+      }
+    });
+
     const svgContent = elements.map(el => {
       if (el.type === "text") {
         const fontWeight = el.fontWeight || "normal";
@@ -325,19 +339,14 @@ export default function SidebarLeft({
               style="filter: url(#glow)"
             >${el.content}</text>
           </g>`;
-      } else if (el.type === "icon" && el.content) {
-        // Enhanced icon rendering with proper sizing and glow effects
+      } else if (el.type === "icon" && el.content && iconContentMap[el.content]) {
+        // Directly embed the icon SVG content with proper scaling
+        const scale = Math.min(el.width / 24, el.height / 24); // Assuming original viewBox is 24x24
         return `
           <g transform="translate(${el.x},${el.y})">
-            <use
-              href="#icon-${el.content}"
-              x="0"
-              y="0"
-              width="${el.width}"
-              height="${el.height}"
-              fill="${glowColor}"
-              style="filter: url(#iconGlow); transform-origin: center center;"
-            />
+            <g transform="scale(${scale})" fill="${glowColor}" style="filter: url(#iconGlow)">
+              ${iconContentMap[el.content]}
+            </g>
           </g>`;
       }
       return "";
@@ -375,10 +384,29 @@ export default function SidebarLeft({
       elementsWithIcons: elements.filter(el => el.type === 'icon').map(el => el.content)
     });
 
-    // Combine all SVG parts with improved structure
+    // Combine all SVG parts with improved structure for maximum compatibility
     const svgString = `${svgHeader}
-      ${filters}
-      ${iconSymbols ? `<defs>${iconSymbols}</defs>` : '<!-- No icon symbols available -->'}
+      <defs>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feFlood flood-color="${glowColor}" flood-opacity="0.8" result="colorAlpha"/>
+          <feComposite in="colorAlpha" in2="coloredBlur" operator="in" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <filter id="iconGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feFlood flood-color="${glowColor}" flood-opacity="1"/>
+          <feComposite in2="blur" operator="in"/>
+          <feMerge>
+            <feMergeNode/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
       ${rect}
       ${svgContent}
       ${svgFooter}`;
