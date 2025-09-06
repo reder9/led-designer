@@ -313,6 +313,11 @@ export default function Panel({
         const idx = Math.floor(t * 4);
         return paletteAt(idx);
       }
+      case "pulse": {
+        const { r, g, b } = hexToRgb(glowColor);
+        const alpha = ((Math.sin(t * 2 * Math.PI) + 1) / 2) * 0.8 + 0.2;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
       case "jump": {
         const idx = Math.floor(t * 1);
         return paletteAt(idx);
@@ -354,6 +359,9 @@ export default function Panel({
       case "flash": {
         const idx = Math.floor(t * 4);
         return paletteAt(idx);
+      }
+      case "pulse": {
+        return glowColor; // Keep consistent color, let the background handle the pulsing
       }
       case "jump": {
         const idx = Math.floor(t * 1);

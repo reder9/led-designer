@@ -26,11 +26,11 @@ export default function SidebarRight({
   ];
 
   const effects = [
-    { name: "Fade", emoji: "🌅", function: "fade" },
+    { name: "Rainbow", emoji: "🌈", function: "rainbow" },
     { name: "Flash", emoji: "⚡", function: "flash" },
     { name: "Strobe", emoji: "💫", function: "strobe" },
     { name: "Smooth", emoji: "🌊", function: "smooth" },
-    { name: "Rainbow", emoji: "🌈", function: "rainbow" },
+    { name: "Fade", emoji: "🌅", function: "fade" },
     { name: "Pulse", emoji: "💓", function: "pulse" },
   ];
 
