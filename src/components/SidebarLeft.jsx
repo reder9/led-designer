@@ -2,11 +2,9 @@ import React, { useState, useEffect } from "react";
 import { iconComponentMap } from "../utils/iconMap.jsx";
 import { icons } from "../utils/icons";
 import { exportAsImage } from "../utils/exportImage";
-import { exportLightBurnSVG } from "../utils/exportLightBurnSVG";
 import IconControls from "./sidebar/IconControls";
 import TextControls from "./sidebar/TextControls";
 import "../styles/fonts.css";
-import "../styles/icons.css";
 
 export default function SidebarLeft({
   elements,
