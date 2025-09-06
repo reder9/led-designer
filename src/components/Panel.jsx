@@ -33,6 +33,54 @@ export default function Panel({
   // Set default glowMode to rainbow if not provided
   const effectiveGlowMode = glowMode || "rainbow";
 
+  // Helper function to find nearby free space when collision occurs
+  const findNearbyFreeSpace = (preferredX, preferredY, elementWidth, elementHeight) => {
+    const gridSize = 20;
+    const panelWidth = width;
+    const panelHeight = height;
+    const padding = 10;
+
+    // Try positions in a spiral pattern around the preferred location
+    for (let radius = 0; radius < 200; radius += gridSize) {
+      for (let angle = 0; angle < 360; angle += 45) {
+        const x = Math.max(padding, Math.min(panelWidth - elementWidth - padding, 
+          preferredX + radius * Math.cos(angle * Math.PI / 180)));
+        const y = Math.max(padding, Math.min(panelHeight - elementHeight - padding, 
+          preferredY + radius * Math.sin(angle * Math.PI / 180)));
+
+        // Check if this position is free
+        const wouldCollide = elements.some(otherEl => {
+          const thisRect = {
+            left: x,
+            right: x + elementWidth,
+            top: y,
+            bottom: y + elementHeight
+          };
+          
+          const otherRect = {
+            left: otherEl.x,
+            right: otherEl.x + otherEl.width,
+            top: otherEl.y,
+            bottom: otherEl.y + otherEl.height
+          };
+
+          const buffer = 2;
+          return !(thisRect.right + buffer <= otherRect.left || 
+                  thisRect.left >= otherRect.right + buffer || 
+                  thisRect.bottom + buffer <= otherRect.top || 
+                  thisRect.top >= otherRect.bottom + buffer);
+        });
+
+        if (!wouldCollide) {
+          return { x, y };
+        }
+      }
+    }
+
+    // Fallback to top-left corner
+    return { x: padding, y: padding };
+  };
+
   // Animation clock
   useEffect(() => {
     if (!isPowerOn) return;
@@ -264,14 +312,12 @@ export default function Panel({
 
       {/* Opaque panel */}
       <div
+        id="panel-inner"
         className="absolute inset-0 bg-black z-15"
         style={{
           borderRadius: roundedEdges ? "20px" : "0px",
           opacity: isPowerOn ? 0.95 : 0.3,
-          border:
-            showLedBorder && isPowerOn
-              ? "2px solid rgba(255,255,255,0.15)"
-              : "none",
+          border: "2px solid rgba(255,255,255,0.3)", // Clean border without glow for export
         }}
       >
         {elements.map((el) => (
@@ -287,20 +333,11 @@ export default function Panel({
             }}
             onDrag={(e, d) => {
               const snapped = applySnapping(el, d.x, d.y);
-              // Update position immediately for live preview
-              setElements(prev => 
-                prev.map(x => x.id === el.id ? { ...x, x: snapped.x, y: snapped.y } : x)
-              );
-            }}
-            onDragStop={(e, d) => {
-              setIsDragging(false);
-              const snapped = applySnapping(el, d.x, d.y);
-
-              // Check for collisions with other elements
+              
+              // Check for collisions with other elements during drag
               const wouldCollide = elements.some(otherEl => {
                 if (otherEl.id === el.id) return false;
                 
-                // Calculate boundaries for both elements
                 const thisRect = {
                   left: snapped.x,
                   right: snapped.x + el.width,
@@ -315,16 +352,61 @@ export default function Panel({
                   bottom: otherEl.y + otherEl.height
                 };
 
-                // Check for overlap
-                return !(thisRect.right < otherRect.left || 
-                        thisRect.left > otherRect.right || 
-                        thisRect.bottom < otherRect.top || 
-                        thisRect.top > otherRect.bottom);
+                // Check for overlap with a small buffer to prevent touching
+                const buffer = 2;
+                return !(thisRect.right + buffer <= otherRect.left || 
+                        thisRect.left >= otherRect.right + buffer || 
+                        thisRect.bottom + buffer <= otherRect.top || 
+                        thisRect.top >= otherRect.bottom + buffer);
+              });
+
+              // Only update position if no collision
+              if (!wouldCollide) {
+                setElements(prev => 
+                  prev.map(x => x.id === el.id ? { ...x, x: snapped.x, y: snapped.y } : x)
+                );
+              }
+            }}
+            onDragStop={(e, d) => {
+              setIsDragging(false);
+              const snapped = applySnapping(el, d.x, d.y);
+
+              // Check for collisions with other elements
+              const wouldCollide = elements.some(otherEl => {
+                if (otherEl.id === el.id) return false;
+                
+                const thisRect = {
+                  left: snapped.x,
+                  right: snapped.x + el.width,
+                  top: snapped.y,
+                  bottom: snapped.y + el.height
+                };
+                
+                const otherRect = {
+                  left: otherEl.x,
+                  right: otherEl.x + otherEl.width,
+                  top: otherEl.y,
+                  bottom: otherEl.y + otherEl.height
+                };
+
+                // Check for overlap with buffer
+                const buffer = 2;
+                return !(thisRect.right + buffer <= otherRect.left || 
+                        thisRect.left >= otherRect.right + buffer || 
+                        thisRect.bottom + buffer <= otherRect.top || 
+                        thisRect.top >= otherRect.bottom + buffer);
               });
 
               if (wouldCollide) {
-                // If there would be a collision, revert to original position
-                setElements(prev => [...prev]);
+                // If there would be a collision, find a nearby free space
+                const freeSpace = findNearbyFreeSpace(snapped.x, snapped.y, el.width, el.height);
+                setElements((prev) => {
+                  const updated = prev.map((x) =>
+                    x.id === el.id ? { ...x, x: freeSpace.x, y: freeSpace.y } : x
+                  );
+                  saveToHistory(updated);
+                  return updated;
+                });
               } else {
                 // If no collision, update position
                 setElements((prev) => {

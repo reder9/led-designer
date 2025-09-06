@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Russo+One&family=Orbitron:wght@400;500;600;700;800;900&family=Play:wght@400;700&family=Rajdhani:wght@300;400;500;600;700&family=Chakra+Petch:wght@300;400;500;600;700&family=Audiowide&family=Teko:wght@300;400;500;600;700&family=Aldrich&family=Quantico:wght@400;700&family=Oxanium:wght@200;300;400;500;600;700;800&family=Iceland&family=Syncopate:wght@400;700&family=Wallpoet&family=Press+Start+2P&family=VT323&family=Share+Tech+Mono&family=Nova+Square&family=Michroma&family=Stalinist+One&family=Rubik+Mono+One&family=Faster+One&family=Monoton&display=swap');
+
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
@@ -58,8 +60,6 @@
   max-width: 100%;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Russo+One&family=Orbitron:wght@400;500;600;700;800;900&family=Play:wght@400;700&family=Rajdhani:wght@300;400;500;600;700&family=Chakra+Petch:wght@300;400;500;600;700&family=Audiowide&family=Teko:wght@300;400;500;600;700&family=Aldrich&family=Quantico:wght@400;700&family=Oxanium:wght@200;300;400;500;600;700;800&family=Iceland&family=Syncopate:wght@400;700&family=Wallpoet&family=Press+Start+2P&family=VT323&family=Share+Tech+Mono&family=Nova+Square&family=Michroma&family=Stalinist+One&family=Rubik+Mono+One&family=Faster+One&family=Monoton&display=swap');
-
 /* Gaming and streaming-specific font classes */
 .font-orbitron {
   font-family: 'Orbitron', sans-serif;
@@ -110,7 +110,10 @@
 }
 
 .font-press-start {
-  font-family: 'Press Start 2P', cursive;
+  font-family: 'Press Start 2P', monospace;
+  font-display: swap;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: none;
 }
 
 .font-vt323 {

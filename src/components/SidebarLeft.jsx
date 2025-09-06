@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { iconComponentMap } from "../utils/iconMap.jsx";
 import { icons } from "../utils/icons";
-import { exportSVG } from "../utils/exportSvg";
+import { exportAsImage } from "../utils/exportImage";
+import { exportLightBurnSVG } from "../utils/exportLightBurnSVG";
 import IconControls from "./sidebar/IconControls";
 import TextControls from "./sidebar/TextControls";
 import "../styles/fonts.css";
@@ -68,19 +69,28 @@ export default function SidebarLeft({
   }, [fontSize]);
 
   // Helper function to find a free space for new elements
-  const findFreeSpace = (width, height) => {
+  const findFreeSpace = (elementWidth, elementHeight) => {
     const gridSize = 20;
-    const maxAttempts = 100;
+    const maxAttempts = 200;
+    const panelWidth = width || 800;
+    const panelHeight = height || 400;
+    const padding = 10; // Keep elements away from edges
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const x = (attempt % 5) * gridSize + 50;
-      const y = Math.floor(attempt / 5) * gridSize + 50;
+      const x = (attempt % 10) * gridSize + padding;
+      const y = Math.floor(attempt / 10) * gridSize + padding;
 
+      // Check if element would fit within panel bounds
+      if (x + elementWidth > panelWidth - padding || y + elementHeight > panelHeight - padding) {
+        continue;
+      }
+
+      // Check for collisions with existing elements
       const wouldCollide = elements.some(el => {
-        return !(x + width < el.x ||
-                x > el.x + el.width ||
-                y + height < el.y ||
-                y > el.y + el.height);
+        return !(x + elementWidth <= el.x ||
+                x >= el.x + el.width ||
+                y + elementHeight <= el.y ||
+                y >= el.y + el.height);
       });
 
       if (!wouldCollide) {
@@ -88,7 +98,24 @@ export default function SidebarLeft({
       }
     }
 
-    return { x: 100, y: 100 };
+    // Fallback: find any available space near top-left
+    for (let y = padding; y < panelHeight - elementHeight - padding; y += gridSize) {
+      for (let x = padding; x < panelWidth - elementWidth - padding; x += gridSize) {
+        const wouldCollide = elements.some(el => {
+          return !(x + elementWidth <= el.x ||
+                  x >= el.x + el.width ||
+                  y + elementHeight <= el.y ||
+                  y >= el.y + el.height);
+        });
+
+        if (!wouldCollide) {
+          return { x, y };
+        }
+      }
+    }
+
+    // Last resort: place at top-left with padding
+    return { x: padding, y: padding };
   };
 
   const addText = () => {
@@ -263,13 +290,88 @@ export default function SidebarLeft({
     loadIconPaths();
   }, []);
 
-  const handleExport = () => {
-    exportSVG({
-      elements,
-      roundedEdges,
-      glowColor,
-      iconSymbols,
-    });
+  const handleExport = async () => {
+    try {
+      // Get the inner panel element (without outer glow effects)
+      const panel = document.getElementById('panel-inner');
+      if (!panel) {
+        throw new Error('Panel inner element not found');
+      }
+
+      // Create a style element to override all colors during export
+      const exportStyle = document.createElement('style');
+      exportStyle.id = 'export-override-styles';
+      exportStyle.innerHTML = `
+        /* Override all text elements */
+        #panel-inner textarea {
+          color: #00FFFF !important;
+          text-shadow: none !important;
+          filter: none !important;
+          background-color: transparent !important;
+        }
+        
+        /* Override all icon containers and SVG elements */
+        #panel-inner div[style*="backgroundColor"] {
+          background-color: transparent !important;
+          filter: none !important;
+        }
+        
+        #panel-inner svg,
+        #panel-inner svg *,
+        #panel-inner path {
+          color: #00FFFF !important;
+          fill: #00FFFF !important;
+          stroke: none !important;
+          filter: none !important;
+        }
+        
+        /* Force icon divs to show cyan content */
+        #panel-inner .element-wrapper > div {
+          background-color: transparent !important;
+          filter: none !important;
+        }
+        
+        #panel-inner .element-wrapper > div svg,
+        #panel-inner .element-wrapper > div svg * {
+          color: #00FFFF !important;
+          fill: #00FFFF !important;
+          filter: none !important;
+        }
+        
+        /* Ensure the panel itself stays black */
+        #panel-inner {
+          background-color: black !important;
+          border: 2px solid rgba(255,255,255,0.3) !important;
+        }
+        
+        /* Hide UI elements */
+        .react-resizable-handle,
+        .resize-handle,
+        [style*="dashed"] {
+          display: none !important;
+        }
+      `;
+      
+      // Add the style to the document
+      document.head.appendChild(exportStyle);
+
+      // Wait for styles to apply
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Export as PNG for better compatibility (targeting inner panel only)
+      await exportAsImage('png', 'panel-inner');
+
+      // Remove the export styles
+      document.head.removeChild(exportStyle);
+
+    } catch (error) {
+      console.error('Failed to export:', error);
+      // Make sure to clean up styles even if export fails
+      const exportStyle = document.getElementById('export-override-styles');
+      if (exportStyle) {
+        document.head.removeChild(exportStyle);
+      }
+    }
   };
 
   return (

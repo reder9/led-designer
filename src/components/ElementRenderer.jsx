@@ -72,13 +72,44 @@ export default function ElementRenderer({
       }
     };
 
+    // Get font class from font name
+    const getFontClass = (fontFamily) => {
+      const fontMap = {
+        "Orbitron": "font-orbitron",
+        "Russo One": "font-russo-one", 
+        "Play": "font-play",
+        "Rajdhani": "font-rajdhani",
+        "Chakra Petch": "font-chakra",
+        "Audiowide": "font-audiowide",
+        "Teko": "font-teko",
+        "Aldrich": "font-aldrich",
+        "Quantico": "font-quantico",
+        "Oxanium": "font-oxanium",
+        "Press Start 2P": "font-press-start",
+        "VT323": "font-vt323",
+        "Share Tech Mono": "font-share-tech",
+        "Iceland": "font-iceland",
+        "Syncopate": "font-syncopate",
+        "Wallpoet": "font-wallpoet",
+        "Nova Square": "font-nova-square",
+        "Michroma": "font-michroma",
+        "Stalinist One": "font-stalinist",
+        "Rubik Mono One": "font-rubik-mono",
+        "Faster One": "font-faster-one",
+        "Monoton": "font-monoton"
+      };
+      return fontMap[fontFamily] || '';
+    };
+
+    const fontClass = getFontClass(el.fontFamily);
+
     return (
       <textarea
         ref={(ref) => (textareaRefs.current[el.id] = ref)}
         defaultValue={el.content}
-        className={`w-full h-full resize-none bg-transparent outline-none ${getTextAlignmentClass()}`}
+        className={`w-full h-full resize-none bg-transparent outline-none ${getTextAlignmentClass()} ${fontClass}`}
         style={{
-          fontFamily: el.fontFamily,
+          fontFamily: fontClass ? undefined : el.fontFamily, // Only use inline fontFamily if no class available
           fontSize: el.fontSize,
           fontWeight: el.fontWeight || "normal",
           fontStyle: el.fontStyle || "normal",
@@ -123,10 +154,8 @@ export default function ElementRenderer({
       <div
         className="w-full h-full flex items-center justify-center relative"
         style={{
-          color: isPowerOn ? glowColor : "#555",
+          backgroundColor: "transparent", // Background is now transparent
           opacity: elementOpacity,
-          filter: `drop-shadow(0 0 ${10 * textGlowIntensity}px currentColor) 
-                  drop-shadow(0 0 ${20 * textGlowIntensity}px currentColor)`,
           transition: "all 0.3s ease",
           cursor: "move",
           border: selected ? "1px dashed cyan" : "none",
@@ -134,9 +163,17 @@ export default function ElementRenderer({
           pointerEvents: "auto",
           transform: "translate3d(0, 0, 0)", // Force GPU acceleration
           willChange: "transform", // Optimize for animations
+          borderRadius: "4px",
         }}
       >
-        <IconComp style={{ width: '100%', height: '100%', pointerEvents: "none" }} />
+        <IconComp style={{ 
+          width: '100%', 
+          height: '100%', 
+          pointerEvents: "none",
+          color: isPowerOn ? glowColor : "#555", // Icon itself now glows
+          filter: `invert(1) drop-shadow(0 0 ${10 * textGlowIntensity}px ${isPowerOn ? glowColor : "#555"}) 
+                  drop-shadow(0 0 ${20 * textGlowIntensity}px ${isPowerOn ? glowColor : "#555"})` // Invert colors and add glow
+        }} />
       </div>
     );
   }
