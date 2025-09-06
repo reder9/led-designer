@@ -25,7 +25,7 @@ export default function SidebarLeft({
   height = 400,
 }) {
   const [fontSizeInput, setFontSizeInput] = useState(fontSize.toString());
-  const [activeIconCategory, setActiveIconCategory] = useState("Streaming");
+  const [activeIconCategory, setActiveIconCategory] = useState("Social");
   const [iconSymbols, setIconSymbols] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
