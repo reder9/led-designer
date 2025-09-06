@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import Panel from "./components/Panel";
 import SidebarLeft from "./components/SidebarLeft";
 import SidebarRight from "./components/SidebarRight";
+import KeyboardShortcutsHelp from "./components/KeyboardShortcutsHelp";
 import "./index.css";
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
   const [elements, setElements] = useState([]);
   const [glowColor, setGlowColor] = useState("#00faff");
   const [roundedEdges, setRoundedEdges] = useState(false);
+  const [borderRadius, setBorderRadius] = useState(20);
   const [selectedElement, setSelectedElement] = useState(null);
   const [fontFamily, setFontFamily] = useState("Arial");
   const [fontSize, setFontSize] = useState(32);
@@ -75,13 +77,6 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden fixed inset-0">
-      {/* Header */}
-      <header className="w-full py-3 text-center bg-gray-900 shadow-md flex-shrink-0">
-        <h1 className="text-2xl md:text-3xl font-bold text-cyan-400 tracking-wide">
-          LED Panel Designer
-        </h1>
-      </header>
-
       {/* Main Content */}
       {isMobile ? (
         // --- MOBILE LAYOUT: Panel → Left Sidebar → Right Sidebar
@@ -98,6 +93,7 @@ export default function App() {
                   glowColor={glowColor}
                   isPowerOn={isPowerOn}
                   roundedEdges={roundedEdges}
+                  borderRadius={borderRadius}
                   width={baseWidth}
                   height={baseHeight}
                   glowMode={glowMode}
@@ -122,6 +118,8 @@ export default function App() {
               setFontSize={setFontSize}
               roundedEdges={roundedEdges}
               setRoundedEdges={setRoundedEdges}
+              borderRadius={borderRadius}
+              setBorderRadius={setBorderRadius}
               glowColor={glowColor}
               showLedBorder={showLedBorder}
               setShowLedBorder={setShowLedBorder}
@@ -160,6 +158,8 @@ export default function App() {
               setFontSize={setFontSize}
               roundedEdges={roundedEdges}
               setRoundedEdges={setRoundedEdges}
+              borderRadius={borderRadius}
+              setBorderRadius={setBorderRadius}
               glowColor={glowColor}
               showLedBorder={showLedBorder}
               setShowLedBorder={setShowLedBorder}
@@ -180,6 +180,7 @@ export default function App() {
                   glowColor={glowColor}
                   isPowerOn={isPowerOn}
                   roundedEdges={roundedEdges}
+                  borderRadius={borderRadius}
                   width={baseWidth}
                   height={baseHeight}
                   glowMode={glowMode}
@@ -216,9 +217,12 @@ export default function App() {
       <footer className="bg-gray-900 border-t border-gray-800 py-3 px-4 flex-shrink-0">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-center md:text-left">
           <div className="flex items-center justify-center md:justify-start mb-3 md:mb-0">
-            <span className="text-gray-400 mr-2">Created by</span>
+            <span className="text-sm font-medium bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent mr-2">
+              LED Panel Designer
+            </span>
+            <span className="text-gray-400 mr-2">- Created by</span>
             <span className="font-semibold text-white bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-              RederSoft / RederCraft
+              RederSoft
             </span>
           </div>
 
@@ -232,6 +236,9 @@ export default function App() {
           </a>
         </div>
       </footer>
+
+      {/* Keyboard Shortcuts Help */}
+      <KeyboardShortcutsHelp />
     </div>
   );
 }

@@ -107,6 +107,8 @@ export default function ElementRenderer({
       <textarea
         ref={(ref) => (textareaRefs.current[el.id] = ref)}
         defaultValue={el.content}
+        data-text-element="true"
+        data-element-type="text"
         className={`w-full h-full resize-none bg-transparent outline-none ${getTextAlignmentClass()} ${fontClass}`}
         style={{
           fontFamily: fontClass ? undefined : el.fontFamily, // Only use inline fontFamily if no class available

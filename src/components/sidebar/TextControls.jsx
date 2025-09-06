@@ -20,6 +20,37 @@ export default function TextControls({
     <div className="space-y-4">
       <h3 className="text-sm font-semibold text-blue-400">Text Settings</h3>
       
+      {/* Font Size Controls - Centered and First */}
+      <div>
+        <label className="text-sm text-gray-400 mb-2 block text-center">Font Size</label>
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={decrementFontSize}
+            disabled={fontSize <= 8}
+            className="w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            -
+          </button>
+          <input
+            type="text"
+            value={fontSizeInput}
+            onChange={handleFontSizeInputChange}
+            onBlur={handleFontSizeInputBlur}
+            onKeyPress={handleFontSizeInputKeyPress}
+            className="w-16 p-1 text-center bg-gray-800 border border-gray-700 rounded text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
+          />
+          <button
+            onClick={incrementFontSize}
+            disabled={fontSize >= 200}
+            className="w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            +
+          </button>
+        </div>
+        <div className="text-xs text-gray-400 text-center mt-2">{fontSize}px</div>
+      </div>
+
+      {/* Bold/Italic Controls */}
       <div className="flex gap-2">
         <button
           onClick={toggleBold}
@@ -46,6 +77,7 @@ export default function TextControls({
         </button>
       </div>
 
+      {/* Text Alignment */}
       <div>
         <label className="text-sm text-gray-400 mb-1 block">Text Alignment</label>
         <div className="flex gap-1">
@@ -66,6 +98,7 @@ export default function TextControls({
         </div>
       </div>
 
+      {/* Font Family */}
       <div>
         <label className="text-sm text-gray-400 mb-1 block">Font Family</label>
         <div className="max-h-64 overflow-y-auto custom-scrollbar">
@@ -79,14 +112,16 @@ export default function TextControls({
                     <div
                       key={font.name}
                       onClick={() => updateFontFamily(font.name)}
-                      className={`cursor-pointer p-2 rounded transition-all ${
-                        fontFamily === font.name ? "bg-blue-600" : "bg-gray-800 hover:bg-gray-700"
+                      className={`p-2 rounded cursor-pointer transition ${
+                        fontFamily === font.name
+                          ? "bg-cyan-600 text-white"
+                          : "bg-gray-700 hover:bg-gray-600 text-gray-300"
                       }`}
                     >
                       <div
-                        className={`text-white text-base truncate ${font.style}`}
+                        className={`${font.style} text-sm`}
                         style={{
-                          fontFamily: font.name,
+                          fontFamily: font.style ? undefined : font.name,
                           fontSize: font.category === "Retro" ? "14px" : "16px"
                         }}
                       >
@@ -98,35 +133,6 @@ export default function TextControls({
             </div>
           ))}
         </div>
-      </div>
-
-      <div>
-        <label className="text-sm text-gray-400 mb-1 block">Font Size</label>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={decrementFontSize}
-            disabled={fontSize <= 8}
-            className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-white disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            -
-          </button>
-          <input
-            type="text"
-            value={fontSizeInput}
-            onChange={handleFontSizeInputChange}
-            onBlur={handleFontSizeInputBlur}
-            onKeyPress={handleFontSizeInputKeyPress}
-            className="w-16 p-1 text-center bg-gray-800 border border-gray-700 rounded text-white"
-          />
-          <button
-            onClick={incrementFontSize}
-            disabled={fontSize >= 200}
-            className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-white disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            +
-          </button>
-        </div>
-        <div className="text-xs text-gray-400 text-center mt-1">{fontSize}px</div>
       </div>
     </div>
   );

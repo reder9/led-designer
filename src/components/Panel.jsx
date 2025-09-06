@@ -18,6 +18,7 @@ export default function Panel({
   glowColor,
   isPowerOn,
   roundedEdges,
+  borderRadius = 20,
   width,
   height,
   glowMode,
@@ -108,6 +109,77 @@ export default function Panel({
     }
   };
 
+  // Layer management
+  const bringToFront = () => {
+    if (selectedElement) {
+      const elementIndex = elements.findIndex(el => el.id === selectedElement);
+      if (elementIndex !== -1 && elementIndex !== elements.length - 1) {
+        const element = elements[elementIndex];
+        const newElements = [
+          ...elements.slice(0, elementIndex),
+          ...elements.slice(elementIndex + 1),
+          element
+        ];
+        setElements(newElements);
+        saveToHistory(newElements);
+      }
+    }
+  };
+
+  const sendToBack = () => {
+    if (selectedElement) {
+      const elementIndex = elements.findIndex(el => el.id === selectedElement);
+      if (elementIndex !== -1 && elementIndex !== 0) {
+        const element = elements[elementIndex];
+        const newElements = [
+          element,
+          ...elements.slice(0, elementIndex),
+          ...elements.slice(elementIndex + 1)
+        ];
+        setElements(newElements);
+        saveToHistory(newElements);
+      }
+    }
+  };
+
+  // Element movement
+  useEffect(() => {
+    const handleMoveElement = (e) => {
+      const { direction, distance, elementId } = e.detail;
+      if (elementId === selectedElement) {
+        const element = elements.find(el => el.id === elementId);
+        if (element) {
+          let newX = element.x;
+          let newY = element.y;
+          
+          switch (direction) {
+            case "ArrowUp":
+              newY = Math.max(0, element.y - distance);
+              break;
+            case "ArrowDown":
+              newY = Math.min(height - element.height, element.y + distance);
+              break;
+            case "ArrowLeft":
+              newX = Math.max(0, element.x - distance);
+              break;
+            case "ArrowRight":
+              newX = Math.min(width - element.width, element.x + distance);
+              break;
+          }
+          
+          const updatedElements = elements.map(el =>
+            el.id === elementId ? { ...el, x: newX, y: newY } : el
+          );
+          setElements(updatedElements);
+          saveToHistory(updatedElements);
+        }
+      }
+    };
+
+    window.addEventListener('moveElement', handleMoveElement);
+    return () => window.removeEventListener('moveElement', handleMoveElement);
+  }, [elements, selectedElement, width, height, setElements, saveToHistory]);
+
   // Snapping
   const [guides, setGuides] = useState([]);
   const [distanceIndicators, setDistanceIndicators] = useState([]);
@@ -131,12 +203,36 @@ export default function Panel({
     selectedElement,
     isEditing,
     setIsEditing,
+    setSelectedElement,
+    bringToFront,
+    sendToBack,
   });
 
   const handleContextMenu = (e, id) => {
     e.preventDefault();
     setSelectedElement(id);
-    createContextMenu(e.pageX, e.pageY);
+    
+    createContextMenu(e.pageX, e.pageY, {
+      onCopy: copy,
+      onCut: cut,
+      onPaste: () => paste(e.offsetX, e.offsetY),
+      onDuplicate: duplicate,
+      onDelete: deleteSelected,
+      onBringToFront: bringToFront,
+      onSendToBack: sendToBack,
+      hasSelectedElement: !!selectedElement,
+      canPaste: true,
+    });
+  };
+
+  const handlePanelContextMenu = (e) => {
+    e.preventDefault();
+    
+    createContextMenu(e.pageX, e.pageY, {
+      onPaste: () => paste(e.nativeEvent.offsetX, e.nativeEvent.offsetY),
+      hasSelectedElement: false,
+      canPaste: true,
+    });
   };
 
   const handleElementClick = (e, el) => {
@@ -277,13 +373,14 @@ export default function Panel({
         setSelectedElement(null);
         setIsEditing(false);
       }}
+      onContextMenu={handlePanelContextMenu}
     >
       {/* Smooth, colorful LED-style glow border */}
       {showLedBorder && isPowerOn && (
         <div
           className="absolute inset-0 rounded-2xl pointer-events-none"
           style={{
-            borderRadius: roundedEdges ? "20px" : "0px",
+            borderRadius: roundedEdges ? `${borderRadius}px` : "0px",
             background: getGlowBackground(),
             filter: "blur(20px)",
             boxShadow: `
@@ -305,7 +402,7 @@ export default function Panel({
               "radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 60%)",
             boxShadow: "inset 0 0 15px rgba(255, 255, 255, 0.2)",
             opacity: (brightness / 100) * 0.4,
-            borderRadius: roundedEdges ? "20px" : "0px",
+            borderRadius: roundedEdges ? `${borderRadius}px` : "0px",
           }}
         />
       )}
@@ -315,7 +412,7 @@ export default function Panel({
         id="panel-inner"
         className="absolute inset-0 bg-black z-15"
         style={{
-          borderRadius: roundedEdges ? "20px" : "0px",
+          borderRadius: roundedEdges ? `${borderRadius}px` : "0px",
           opacity: isPowerOn ? 0.95 : 0.3,
           border: "2px solid rgba(255,255,255,0.3)", // Clean border without glow for export
         }}
@@ -327,6 +424,7 @@ export default function Panel({
             position={{ x: el.x, y: el.y }}
             bounds="parent"
             className="element-wrapper"
+            data-element-id={el.id}
             onDragStart={(e, d) => {
               setIsDragging(true);
               setSelectedElement(el.id);

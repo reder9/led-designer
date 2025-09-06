@@ -1,4 +1,4 @@
-// Updated useKeyboardShortcuts hook
+// Enhanced useKeyboardShortcuts hook
 import { useEffect } from "react";
 
 export default function useKeyboardShortcuts({
@@ -13,6 +13,10 @@ export default function useKeyboardShortcuts({
   isEditing,
   setIsEditing,
   setSelectedElement,
+  selectAll,
+  deselect,
+  bringToFront,
+  sendToBack,
 }) {
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -22,12 +26,14 @@ export default function useKeyboardShortcuts({
                           target.tagName === "INPUT" || 
                           target.isContentEditable;
       
-      // Don't handle shortcuts if user is editing text (unless it's Escape)
-      if (isTextInput && e.key !== "Escape") {
+      // Don't handle shortcuts if user is editing text (unless it's specific keys)
+      if (isTextInput && !["Escape", "Tab"].includes(e.key)) {
         return; // Allow normal text editing behavior
       }
 
       const ctrlOrCmd = e.ctrlKey || e.metaKey;
+      const shiftKey = e.shiftKey;
+      const altKey = e.altKey;
 
       switch (e.key) {
         case "Delete":
@@ -38,18 +44,23 @@ export default function useKeyboardShortcuts({
             deleteSelected();
           }
           break;
+        
+        // Undo/Redo
         case "z":
-          if (ctrlOrCmd && !e.shiftKey) {
+          if (ctrlOrCmd && !shiftKey) {
             e.preventDefault();
             undo();
           }
           break;
         case "Z":
-          if (ctrlOrCmd && e.shiftKey) {
+        case "y":
+          if ((ctrlOrCmd && shiftKey && e.key === "Z") || (ctrlOrCmd && e.key === "y")) {
             e.preventDefault();
             redo();
           }
           break;
+        
+        // Clipboard operations
         case "c":
           if (ctrlOrCmd && selectedElement) {
             e.preventDefault();
@@ -74,6 +85,41 @@ export default function useKeyboardShortcuts({
             duplicate();
           }
           break;
+        
+        // Selection
+        case "a":
+          if (ctrlOrCmd && selectAll) {
+            e.preventDefault();
+            selectAll();
+          }
+          break;
+        
+        // Layer management
+        case "]":
+          if (ctrlOrCmd && selectedElement && bringToFront) {
+            e.preventDefault();
+            bringToFront();
+          }
+          break;
+        case "[":
+          if (ctrlOrCmd && selectedElement && sendToBack) {
+            e.preventDefault();
+            sendToBack();
+          }
+          break;
+        
+        // Movement with arrow keys
+        case "ArrowUp":
+        case "ArrowDown":
+        case "ArrowLeft":
+        case "ArrowRight":
+          if (selectedElement && !isEditing) {
+            e.preventDefault();
+            moveElement(e.key, shiftKey ? 10 : 1);
+          }
+          break;
+        
+        // Other shortcuts
         case "Escape":
           if (isEditing) {
             e.preventDefault();
@@ -89,7 +135,25 @@ export default function useKeyboardShortcuts({
             setIsEditing(true);
           }
           break;
+        case "Tab":
+          if (!isTextInput) {
+            e.preventDefault();
+            // Could implement tab to next element
+          }
+          break;
       }
+    };
+
+    // Helper function to move selected element
+    const moveElement = (direction, distance) => {
+      if (!selectedElement) return;
+      
+      // This would need to be implemented in the Panel component
+      // For now, we'll emit a custom event
+      const event = new CustomEvent('moveElement', {
+        detail: { direction, distance, elementId: selectedElement }
+      });
+      window.dispatchEvent(event);
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -106,5 +170,9 @@ export default function useKeyboardShortcuts({
     isEditing,
     setIsEditing,
     setSelectedElement,
+    selectAll,
+    deselect,
+    bringToFront,
+    sendToBack,
   ]);
 }
