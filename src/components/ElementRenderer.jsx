@@ -172,8 +172,8 @@ export default function ElementRenderer({
           width: '100%', 
           height: '100%', 
           pointerEvents: "none",
-          color: isPowerOn ? glowColor : "#555",
-          filter: isPowerOn ? `drop-shadow(0 0 ${8 * textGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${15 * textGlowIntensity}px ${glowColor})` : "none"
+          color: isPowerOn ? "#333" : "#555", // Darker color for the icon itself
+          filter: isPowerOn ? `invert(1) drop-shadow(0 0 ${8 * textGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${15 * textGlowIntensity}px ${glowColor})` : "invert(1)"
         }} />
       </div>
     );

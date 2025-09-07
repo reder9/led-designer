@@ -40,7 +40,7 @@ export default function IconControls({
                       <img
                         src={iconUrl}
                         alt={iconName}
-                        className="w-full h-full object-contain filter brightness-0 invert group-hover:brightness-100 group-hover:invert-0 transition-all"
+                        className="w-full h-full object-contain filter invert group-hover:invert-0 transition-all"
                       />
                     </div>
                     <div className="text-xs text-gray-400 mt-1 truncate text-center">
