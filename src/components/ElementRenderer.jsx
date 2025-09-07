@@ -1,4 +1,4 @@
-import { iconComponentMap } from "../utils/iconMap";
+import { iconComponentMap } from "../utils/iconMap.jsx";
 import { useEffect, useRef } from "react";
 
 export default function ElementRenderer({
@@ -156,15 +156,15 @@ export default function ElementRenderer({
       <div
         className="w-full h-full flex items-center justify-center relative"
         style={{
-          backgroundColor: "transparent", // Background is now transparent
+          backgroundColor: "transparent",
           opacity: elementOpacity,
           transition: "all 0.3s ease",
           cursor: "move",
           border: selected ? "1px dashed cyan" : "none",
           animation: glowMode === "rainbow" ? "rainbowText 3s linear infinite" : "none",
           pointerEvents: "auto",
-          transform: "translate3d(0, 0, 0)", // Force GPU acceleration
-          willChange: "transform", // Optimize for animations
+          transform: "translate3d(0, 0, 0)",
+          willChange: "transform",
           borderRadius: "4px",
         }}
       >
@@ -172,9 +172,8 @@ export default function ElementRenderer({
           width: '100%', 
           height: '100%', 
           pointerEvents: "none",
-          color: isPowerOn ? glowColor : "#555", // Icon itself now glows
-          filter: `invert(1) drop-shadow(0 0 ${10 * textGlowIntensity}px ${isPowerOn ? glowColor : "#555"}) 
-                  drop-shadow(0 0 ${20 * textGlowIntensity}px ${isPowerOn ? glowColor : "#555"})` // Invert colors and add glow
+          color: isPowerOn ? glowColor : "#555",
+          filter: isPowerOn ? `drop-shadow(0 0 ${8 * textGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${15 * textGlowIntensity}px ${glowColor})` : "none"
         }} />
       </div>
     );
