@@ -168,15 +168,38 @@ export default function ElementRenderer({
           borderRadius: "4px",
         }}
       >
-        <IconComp style={{ 
-          width: '100%', 
-          height: '100%', 
-          pointerEvents: "none",
-          color: isPowerOn ? "#333" : "#555",
-          filter: isPowerOn ? 
-            `invert(1) sepia(1) saturate(4) hue-rotate(${glowColor === '#ff0000' ? '0deg' : glowColor === '#00ff00' ? '120deg' : glowColor === '#0000ff' ? '240deg' : glowColor === '#ffff00' ? '60deg' : glowColor === '#ff00ff' ? '300deg' : glowColor === '#00ffff' ? '180deg' : '0deg'}) brightness(0.6) contrast(1.2) drop-shadow(0 0 ${8 * textGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${15 * textGlowIntensity}px ${glowColor})` : 
-            "invert(1) brightness(0.7)"
-        }} />
+        <>
+          {/* SVG Filter Definition */}
+          <svg style={{ position: 'absolute', width: 0, height: 0 }}>
+            <defs>
+              <filter id="coloredInvert">
+                <feColorMatrix type="matrix" values="-1 0 0 0 1  0 -1 0 0 1  0 0 -1 0 1  0 0 0 1 0"/>
+                <feComponentTransfer>
+                  <feFuncR type="discrete" tableValues={`0 ${parseInt(glowColor.slice(1, 3), 16) / 255}`}/>
+                  <feFuncG type="discrete" tableValues={`0 ${parseInt(glowColor.slice(3, 5), 16) / 255}`}/>
+                  <feFuncB type="discrete" tableValues={`0 ${parseInt(glowColor.slice(5, 7), 16) / 255}`}/>
+                </feComponentTransfer>
+              </filter>
+            </defs>
+          </svg>
+          
+          <div style={{
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+            filter: isPowerOn ? 
+              `drop-shadow(0 0 ${8 * textGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${15 * textGlowIntensity}px ${glowColor})` : 
+              "none"
+          }}>
+            <IconComp style={{ 
+              width: '100%', 
+              height: '100%', 
+              pointerEvents: "none",
+              color: "#000",
+              filter: isPowerOn ? "url(#coloredInvert)" : "brightness(0.7)"
+            }} />
+          </div>
+        </>
       </div>
     );
   }
