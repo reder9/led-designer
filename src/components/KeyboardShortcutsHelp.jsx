@@ -42,7 +42,8 @@ export default function KeyboardShortcutsHelp() {
         { keys: ['Delete'], action: 'Delete selected element' },
         { keys: ['Backspace'], action: 'Delete selected element' },
         { keys: ['Escape'], action: 'Deselect element / Stop editing' },
-        { keys: ['Enter'], action: 'Start editing text element' },
+        { keys: ['Enter'], action: 'Start editing text element / New line in text' },
+        { keys: ['Shift', '+ Enter'], action: 'Stop editing text element' },
       ],
     },
     {
@@ -165,6 +166,8 @@ export default function KeyboardShortcutsHelp() {
             <div className='text-gray-300 text-sm space-y-1'>
               <p>• Right-click on elements or empty space for context menus</p>
               <p>• Use Shift + Arrow keys for faster movement</p>
+              <p>• Press Enter while editing text to create new lines</p>
+              <p>• Press Shift + Enter to finish editing text</p>
               <p>• Press F1 or Ctrl+/ to open this help anytime</p>
               <p>• Context menus show available actions for the current selection</p>
             </div>

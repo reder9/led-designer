@@ -76,7 +76,7 @@ export default function Panel({
             bottom: otherEl.y + otherEl.height,
           };
 
-          const buffer = 2;
+          const buffer = 5;
           return !(
             thisRect.right + buffer <= otherRect.left ||
             thisRect.left >= otherRect.right + buffer ||
@@ -91,8 +91,41 @@ export default function Panel({
       }
     }
 
-    // Fallback to top-left corner
-    return { x: padding, y: padding };
+    // If no free space found, try a grid search as final fallback
+    for (let y = padding; y < panelHeight - elementHeight - padding; y += gridSize) {
+      for (let x = padding; x < panelWidth - elementWidth - padding; x += gridSize) {
+        const wouldCollide = elements.some(otherEl => {
+          const thisRect = {
+            left: x,
+            right: x + elementWidth,
+            top: y,
+            bottom: y + elementHeight,
+          };
+
+          const otherRect = {
+            left: otherEl.x,
+            right: otherEl.x + otherEl.width,
+            top: otherEl.y,
+            bottom: otherEl.y + otherEl.height,
+          };
+
+          const buffer = 5;
+          return !(
+            thisRect.right + buffer <= otherRect.left ||
+            thisRect.left >= otherRect.right + buffer ||
+            thisRect.bottom + buffer <= otherRect.top ||
+            thisRect.top >= otherRect.bottom + buffer
+          );
+        });
+
+        if (!wouldCollide) {
+          return { x, y };
+        }
+      }
+    }
+
+    // Ultimate fallback - return null to indicate no space available
+    return null;
   };
 
   // Animation clock
@@ -180,11 +213,43 @@ export default function Panel({
               break;
           }
 
-          const updatedElements = elements.map(el =>
-            el.id === elementId ? { ...el, x: newX, y: newY } : el
-          );
-          setElements(updatedElements);
-          saveToHistory(updatedElements);
+          // Check for collisions with other elements
+          const wouldCollide = elements.some(otherEl => {
+            if (otherEl.id === element.id) return false;
+
+            const thisRect = {
+              left: newX,
+              right: newX + element.width,
+              top: newY,
+              bottom: newY + element.height,
+            };
+
+            const otherRect = {
+              left: otherEl.x,
+              right: otherEl.x + otherEl.width,
+              top: otherEl.y,
+              bottom: otherEl.y + otherEl.height,
+            };
+
+            // Check for overlap with buffer
+            const buffer = 5;
+            return !(
+              thisRect.right + buffer <= otherRect.left ||
+              thisRect.left >= otherRect.right + buffer ||
+              thisRect.bottom + buffer <= otherRect.top ||
+              thisRect.top >= otherRect.bottom + buffer
+            );
+          });
+
+          // Only update position if no collision would occur
+          if (!wouldCollide) {
+            const updatedElements = elements.map(el =>
+              el.id === elementId ? { ...el, x: newX, y: newY } : el
+            );
+            setElements(updatedElements);
+            saveToHistory(updatedElements);
+          }
+          // If there would be a collision, simply don't move the element
         }
       }
     };
@@ -479,7 +544,7 @@ export default function Panel({
                 };
 
                 // Check for overlap with a small buffer to prevent touching
-                const buffer = 2;
+                const buffer = 5;
                 return !(
                   thisRect.right + buffer <= otherRect.left ||
                   thisRect.left >= otherRect.right + buffer ||
@@ -518,7 +583,7 @@ export default function Panel({
                 };
 
                 // Check for overlap with buffer
-                const buffer = 2;
+                const buffer = 5;
                 return !(
                   thisRect.right + buffer <= otherRect.left ||
                   thisRect.left >= otherRect.right + buffer ||
@@ -530,13 +595,16 @@ export default function Panel({
               if (wouldCollide) {
                 // If there would be a collision, find a nearby free space
                 const freeSpace = findNearbyFreeSpace(snapped.x, snapped.y, el.width, el.height);
-                setElements(prev => {
-                  const updated = prev.map(x =>
-                    x.id === el.id ? { ...x, x: freeSpace.x, y: freeSpace.y } : x
-                  );
-                  saveToHistory(updated);
-                  return updated;
-                });
+                if (freeSpace) {
+                  setElements(prev => {
+                    const updated = prev.map(x =>
+                      x.id === el.id ? { ...x, x: freeSpace.x, y: freeSpace.y } : x
+                    );
+                    saveToHistory(updated);
+                    return updated;
+                  });
+                }
+                // If no free space available, element stays in original position
               } else {
                 // If no collision, update position
                 setElements(prev => {
@@ -566,11 +634,13 @@ export default function Panel({
                   bottom: otherEl.y + otherEl.height,
                 };
 
+                // Check for overlap with buffer
+                const buffer = 5;
                 return !(
-                  thisRect.right < otherRect.left ||
-                  thisRect.left > otherRect.right ||
-                  thisRect.bottom < otherRect.top ||
-                  thisRect.top > otherRect.bottom
+                  thisRect.right + buffer <= otherRect.left ||
+                  thisRect.left >= otherRect.right + buffer ||
+                  thisRect.bottom + buffer <= otherRect.top ||
+                  thisRect.top >= otherRect.bottom + buffer
                 );
               });
 

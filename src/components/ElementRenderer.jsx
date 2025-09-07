@@ -80,10 +80,12 @@ function ElementRenderer({
   };
 
   const onTextKeyDown = _e => {
-    if (_e.key === 'Enter' && !_e.shiftKey) {
+    if (_e.key === 'Enter' && _e.shiftKey) {
+      // Shift+Enter exits editing mode
       _e.preventDefault();
       _e.target.blur();
     }
+    // Regular Enter key now creates new lines (default textarea behavior)
     if (_e.key === 'Escape') {
       _e.preventDefault();
       _e.target.blur();
@@ -168,6 +170,9 @@ function ElementRenderer({
           animation: glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none',
           cursor: isEditing ? 'text' : 'default',
           pointerEvents: isEditing ? 'auto' : 'none',
+          whiteSpace: 'pre-wrap', // Preserve line breaks and wrap text
+          overflow: 'hidden', // Hide scrollbars
+          wordWrap: 'break-word', // Break long words if needed
         }}
         onBlur={onTextBlur}
         onKeyDown={onTextKeyDown}

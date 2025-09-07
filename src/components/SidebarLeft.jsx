@@ -43,6 +43,7 @@ export default function SidebarLeft({
   const [iconSymbols, setIconSymbols] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
+  const [noSpaceWarning, setNoSpaceWarning] = useState(false);
 
   // Handle export with loading modal
   const handleExport = async (_format, _message) => {
@@ -115,6 +116,7 @@ export default function SidebarLeft({
     const panelWidth = width || 800;
     const panelHeight = height || 400;
     const padding = 10;
+    const buffer = 5; // Match the buffer used in collision detection
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const x = (attempt % 10) * gridSize + padding;
@@ -126,10 +128,10 @@ export default function SidebarLeft({
 
       const wouldCollide = elements.some(el => {
         return !(
-          x + elementWidth <= el.x ||
-          x >= el.x + el.width ||
-          y + elementHeight <= el.y ||
-          y >= el.y + el.height
+          x + elementWidth + buffer <= el.x ||
+          x >= el.x + el.width + buffer ||
+          y + elementHeight + buffer <= el.y ||
+          y >= el.y + el.height + buffer
         );
       });
 
@@ -142,10 +144,10 @@ export default function SidebarLeft({
       for (let x = padding; x < panelWidth - elementWidth - padding; x += gridSize) {
         const wouldCollide = elements.some(el => {
           return !(
-            x + elementWidth <= el.x ||
-            x >= el.x + el.width ||
-            y + elementHeight <= el.y ||
-            y >= el.y + el.height
+            x + elementWidth + buffer <= el.x ||
+            x >= el.x + el.width + buffer ||
+            y + elementHeight + buffer <= el.y ||
+            y >= el.y + el.height + buffer
           );
         });
 
@@ -155,12 +157,19 @@ export default function SidebarLeft({
       }
     }
 
-    return { x: padding, y: padding };
+    return null; // No free space available
   };
 
   const addText = () => {
     const elementSize = { width: 120, height: 40 };
     const position = findFreeSpace(elementSize.width, elementSize.height);
+
+    if (!position) {
+      // No space available, show warning
+      setNoSpaceWarning(true);
+      setTimeout(() => setNoSpaceWarning(false), 3000);
+      return;
+    }
 
     const newElement = {
       id: Date.now(),
@@ -184,6 +193,13 @@ export default function SidebarLeft({
     const defaultKey = iconName || Object.keys(iconComponentMap)[0];
     const elementSize = { width: 60, height: 60 };
     const position = findFreeSpace(elementSize.width, elementSize.height);
+
+    if (!position) {
+      // No space available, show warning
+      setNoSpaceWarning(true);
+      setTimeout(() => setNoSpaceWarning(false), 3000);
+      return;
+    }
 
     const newElement = {
       id: Date.now(),
@@ -522,6 +538,42 @@ export default function SidebarLeft({
 
       {/* Export Modal */}
       <ExportModal isVisible={isExporting} progress={exportProgress} />
+
+      {/* No Space Warning */}
+      {noSpaceWarning && (
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+          <div className='bg-white rounded-xl p-6 shadow-2xl max-w-md mx-4'>
+            <div className='flex items-center space-x-3 mb-4'>
+              <div className='w-10 h-10 bg-red-100 rounded-full flex items-center justify-center'>
+                <svg
+                  className='w-5 h-5 text-red-600'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth='2'
+                    d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.082 16.5c-.77.833.192 2.5 1.732 2.5z'
+                  />
+                </svg>
+              </div>
+              <h3 className='text-lg font-semibold text-gray-900'>No Space Available</h3>
+            </div>
+            <p className='text-gray-600 mb-4'>
+              The canvas is full! Please delete some elements or move existing ones to make space
+              for new items.
+            </p>
+            <button
+              onClick={() => setNoSpaceWarning(false)}
+              className='w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200'
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
