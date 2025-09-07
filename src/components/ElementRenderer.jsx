@@ -172,8 +172,10 @@ export default function ElementRenderer({
           width: '100%', 
           height: '100%', 
           pointerEvents: "none",
-          color: isPowerOn ? "#333" : "#555", // Darker color for the icon itself
-          filter: isPowerOn ? `invert(1) drop-shadow(0 0 ${8 * textGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${15 * textGlowIntensity}px ${glowColor})` : "invert(1)"
+          color: isPowerOn ? "#333" : "#555",
+          filter: isPowerOn ? 
+            `invert(1) sepia(1) saturate(4) hue-rotate(${glowColor === '#ff0000' ? '0deg' : glowColor === '#00ff00' ? '120deg' : glowColor === '#0000ff' ? '240deg' : glowColor === '#ffff00' ? '60deg' : glowColor === '#ff00ff' ? '300deg' : glowColor === '#00ffff' ? '180deg' : '0deg'}) brightness(0.6) contrast(1.2) drop-shadow(0 0 ${8 * textGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${15 * textGlowIntensity}px ${glowColor})` : 
+            "invert(1) brightness(0.7)"
         }} />
       </div>
     );
