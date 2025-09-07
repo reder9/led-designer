@@ -1,13 +1,13 @@
 // Function to convert a pixel value to mm (assuming 96 DPI)
-const pxToMm = (px) => (px * 25.4) / 96;
+const pxToMm = px => (px * 25.4) / 96;
 
-const generateSvgPath = (element, width, height) => {
+const generateSvgPath = (element, _width, _height) => {
   if (element.type === 'text') {
     // For text elements, create a text element with specific attributes LightBurn expects
     return `
       <text
-        x="${pxToMm(element.x + element.width/2)}"
-        y="${pxToMm(element.y + element.height/2)}"
+        x="${pxToMm(element.x + element.width / 2)}"
+        y="${pxToMm(element.y + element.height / 2)}"
         text-anchor="middle"
         dominant-baseline="middle"
         font-family="${element.fontFamily}"

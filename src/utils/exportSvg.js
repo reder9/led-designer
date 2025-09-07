@@ -1,30 +1,30 @@
 export const exportSVG = ({ elements, roundedEdges, glowColor, iconSymbols }) => {
   // Font options for mapping font names to classes
   const fontOptions = [
-    { name: "Orbitron", style: "font-orbitron", category: "Gaming" },
-    { name: "Russo One", style: "font-russo-one", category: "Gaming" },
-    { name: "Play", style: "font-play", category: "Gaming" },
-    { name: "Rajdhani", style: "font-rajdhani", category: "Gaming" },
-    { name: "Chakra Petch", style: "font-chakra", category: "Gaming" },
-    { name: "Audiowide", style: "font-audiowide", category: "Gaming" },
-    { name: "Teko", style: "font-teko", category: "Gaming" },
-    { name: "Aldrich", style: "font-aldrich", category: "Gaming" },
-    { name: "Quantico", style: "font-quantico", category: "Gaming" },
-    { name: "Oxanium", style: "font-oxanium", category: "Gaming" },
-    { name: "Press Start 2P", style: "font-press-start", category: "Retro" },
-    { name: "VT323", style: "font-vt323", category: "Retro" },
-    { name: "Share Tech Mono", style: "font-share-tech", category: "Retro" },
-    { name: "Iceland", style: "font-iceland", category: "Tech" },
-    { name: "Syncopate", style: "font-syncopate", category: "Tech" },
-    { name: "Wallpoet", style: "font-wallpoet", category: "Tech" },
-    { name: "Nova Square", style: "font-nova-square", category: "Tech" },
-    { name: "Michroma", style: "font-michroma", category: "Tech" },
-    { name: "Stalinist One", style: "font-stalinist", category: "Decorative" },
-    { name: "Rubik Mono One", style: "font-rubik-mono", category: "Decorative" },
-    { name: "Faster One", style: "font-faster-one", category: "Decorative" },
-    { name: "Monoton", style: "font-monoton", category: "Decorative" },
-    { name: "Arial", style: "", category: "System" },
-    { name: "Impact", style: "", category: "System" },
+    { name: 'Orbitron', style: 'font-orbitron', category: 'Gaming' },
+    { name: 'Russo One', style: 'font-russo-one', category: 'Gaming' },
+    { name: 'Play', style: 'font-play', category: 'Gaming' },
+    { name: 'Rajdhani', style: 'font-rajdhani', category: 'Gaming' },
+    { name: 'Chakra Petch', style: 'font-chakra', category: 'Gaming' },
+    { name: 'Audiowide', style: 'font-audiowide', category: 'Gaming' },
+    { name: 'Teko', style: 'font-teko', category: 'Gaming' },
+    { name: 'Aldrich', style: 'font-aldrich', category: 'Gaming' },
+    { name: 'Quantico', style: 'font-quantico', category: 'Gaming' },
+    { name: 'Oxanium', style: 'font-oxanium', category: 'Gaming' },
+    { name: 'Press Start 2P', style: 'font-press-start', category: 'Retro' },
+    { name: 'VT323', style: 'font-vt323', category: 'Retro' },
+    { name: 'Share Tech Mono', style: 'font-share-tech', category: 'Retro' },
+    { name: 'Iceland', style: 'font-iceland', category: 'Tech' },
+    { name: 'Syncopate', style: 'font-syncopate', category: 'Tech' },
+    { name: 'Wallpoet', style: 'font-wallpoet', category: 'Tech' },
+    { name: 'Nova Square', style: 'font-nova-square', category: 'Tech' },
+    { name: 'Michroma', style: 'font-michroma', category: 'Tech' },
+    { name: 'Stalinist One', style: 'font-stalinist', category: 'Decorative' },
+    { name: 'Rubik Mono One', style: 'font-rubik-mono', category: 'Decorative' },
+    { name: 'Faster One', style: 'font-faster-one', category: 'Decorative' },
+    { name: 'Monoton', style: 'font-monoton', category: 'Decorative' },
+    { name: 'Arial', style: '', category: 'System' },
+    { name: 'Impact', style: '', category: 'System' },
   ];
 
   // Ensure 2:1 ratio dimensions (width is twice the height)
@@ -89,29 +89,30 @@ export const exportSVG = ({ elements, roundedEdges, glowColor, iconSymbols }) =>
 
   // Extract SVG content for each icon that's being used
   elements.forEach(el => {
-    if (el.type === "icon" && el.content && !iconContentMap[el.content]) {
-      const symbolMatch = iconSymbols.match(new RegExp(`<symbol id="icon-${el.content}"[^>]*>(.*?)</symbol>`, 's'));
+    if (el.type === 'icon' && el.content && !iconContentMap[el.content]) {
+      const symbolMatch = iconSymbols.match(
+        new RegExp(`<symbol id="icon-${el.content}"[^>]*>(.*?)</symbol>`, 's')
+      );
       if (symbolMatch) {
         iconContentMap[el.content] = symbolMatch[1].trim();
       }
     }
   });
 
-  const svgContent = elements.map(el => {
-    if (el.type === "text") {
-      const fontWeight = el.fontWeight || "normal";
-      const fontStyle = el.fontStyle || "normal";
-      const textAnchor = el.textAlign === "left" ? "start" : 
-                        el.textAlign === "right" ? "end" : "middle";
-      
-      // Create a container group for the text with exact positioning
-      const fontClass = fontOptions.find(f => f.name === el.fontFamily)?.style || '';
-      return `
+  const svgContent = elements
+    .map(el => {
+      if (el.type === 'text') {
+        const fontWeight = el.fontWeight || 'normal';
+        const fontStyle = el.fontStyle || 'normal';
+        const textAnchor =
+          el.textAlign === 'left' ? 'start' : el.textAlign === 'right' ? 'end' : 'middle';
+
+        // Create a container group for the text with exact positioning
+        const fontClass = fontOptions.find(f => f.name === el.fontFamily)?.style || '';
+        return `
         <g transform="translate(${el.x},${el.y})">
           <text
-            x="${el.textAlign === "left" ? 0 : 
-               el.textAlign === "right" ? el.width : 
-               el.width / 2}"
+            x="${el.textAlign === 'left' ? 0 : el.textAlign === 'right' ? el.width : el.width / 2}"
             y="${el.height / 2}"
             class="${fontClass}"
             font-size="${el.fontSize}px"
@@ -123,18 +124,19 @@ export const exportSVG = ({ elements, roundedEdges, glowColor, iconSymbols }) =>
             style="filter: url(#glow)"
           >${el.content}</text>
         </g>`;
-    } else if (el.type === "icon" && el.content && iconContentMap[el.content]) {
-      // Directly embed the icon SVG content with proper scaling
-      const scale = Math.min(el.width / 24, el.height / 24); // Assuming original viewBox is 24x24
-      return `
+      } else if (el.type === 'icon' && el.content && iconContentMap[el.content]) {
+        // Directly embed the icon SVG content with proper scaling
+        const scale = Math.min(el.width / 24, el.height / 24); // Assuming original viewBox is 24x24
+        return `
         <g transform="translate(${el.x},${el.y})">
           <g transform="scale(${scale})" fill="${glowColor}" style="filter: url(#iconGlow)">
             ${iconContentMap[el.content]}
           </g>
         </g>`;
-    }
-    return "";
-  }).join("\n");
+      }
+      return '';
+    })
+    .join('\n');
 
   // Glow filters
   const filters = `
@@ -164,11 +166,11 @@ export const exportSVG = ({ elements, roundedEdges, glowColor, iconSymbols }) =>
   // Combine all SVG parts
   const svgString = `${svgHeader}${filters}${rect}${svgContent}${svgFooter}`;
 
-  const blob = new Blob([svgString], { type: "image/svg+xml" });
+  const blob = new Blob([svgString], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   a.href = url;
-  a.download = "panel-export.svg";
+  a.download = 'panel-export.svg';
   a.click();
   URL.revokeObjectURL(url);
 };

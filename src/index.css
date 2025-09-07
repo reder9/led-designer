@@ -1,26 +1,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap');
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @keyframes rainbowText {
-  0% { color: hsl(0, 100%, 50%); }
-  16% { color: hsl(60, 100%, 50%); }
-  33% { color: hsl(120, 100%, 50%); }
-  50% { color: hsl(180, 100%, 50%); }
-  66% { color: hsl(240, 100%, 50%); }
-  83% { color: hsl(300, 100%, 50%); }
-  100% { color: hsl(360, 100%, 50%); }
+  0% {
+    color: hsl(0, 100%, 50%);
+  }
+  16% {
+    color: hsl(60, 100%, 50%);
+  }
+  33% {
+    color: hsl(120, 100%, 50%);
+  }
+  50% {
+    color: hsl(180, 100%, 50%);
+  }
+  66% {
+    color: hsl(240, 100%, 50%);
+  }
+  83% {
+    color: hsl(300, 100%, 50%);
+  }
+  100% {
+    color: hsl(360, 100%, 50%);
+  }
 }
 
 @keyframes flash {
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.05); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Custom Scrollbar Styles */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #4B5563 #1F2937;
+  scrollbar-color: #4b5563 #1f2937;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -28,18 +51,18 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #1F2937;
+  background: #1f2937;
   border-radius: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #4B5563, #374151);
+  background: linear-gradient(to bottom, #4b5563, #374151);
   border-radius: 8px;
   border: 1px solid #374151;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #6B7280, #4B5563);
+  background: linear-gradient(to bottom, #6b7280, #4b5563);
 }
 
 /* Custom Slider Styles */
@@ -48,15 +71,15 @@
   height: 20px;
   width: 20px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3B82F6, #1D4ED8);
-  border: 2px solid #1E293B;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border: 2px solid #1e293b;
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.2s ease;
 }
 
 .slider::-webkit-slider-thumb:hover {
-  background: linear-gradient(135deg, #60A5FA, #2563EB);
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
   transform: scale(1.1);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
 }
@@ -65,8 +88,8 @@
   height: 20px;
   width: 20px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3B82F6, #1D4ED8);
-  border: 2px solid #1E293B;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border: 2px solid #1e293b;
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }

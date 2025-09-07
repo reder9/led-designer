@@ -6,7 +6,7 @@ const gamingIcons = import.meta.glob('../assets/icons/gaming/*.svg', { eager: tr
 const sportsIcons = import.meta.glob('../assets/icons/sports/*.svg', { eager: true });
 
 // Helper function to extract icon name from file path
-const getIconName = (path) => {
+const getIconName = path => {
   return path.split('/').pop().replace('.svg', '');
 };
 
@@ -21,7 +21,7 @@ const createSVGComponent = (svgUrl, iconName) => {
           width: '100%',
           height: '100%',
           objectFit: 'contain',
-          ...props.style
+          ...props.style,
         }}
         {...props}
       />
@@ -30,7 +30,7 @@ const createSVGComponent = (svgUrl, iconName) => {
 };
 
 // Process all icon imports into a single map
-const processIcons = (iconModules) => {
+const processIcons = iconModules => {
   const processed = {};
   for (const path in iconModules) {
     const iconName = getIconName(path);

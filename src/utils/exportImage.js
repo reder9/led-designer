@@ -1,6 +1,10 @@
 import * as htmlToImage from 'html-to-image';
 
-export const exportAsImage = async (format = 'png', elementId = 'panel-wrapper', onProgress = null) => {
+export const exportAsImage = async (
+  format = 'png',
+  elementId = 'panel-wrapper',
+  onProgress = null
+) => {
   try {
     // Ensure format is a string
     if (typeof format !== 'string') {
@@ -23,17 +27,19 @@ export const exportAsImage = async (format = 'png', elementId = 'panel-wrapper',
     updateProgress(20, 'Analyzing design elements...');
 
     // Step 1: Save current states and ensure text visibility without changing colors
-    const textElements = panel.querySelectorAll('textarea, span, p, h1, h2, h3, h4, h5, h6, div[contenteditable], [data-text-element="true"]');
+    const textElements = panel.querySelectorAll(
+      'textarea, span, p, h1, h2, h3, h4, h5, h6, div[contenteditable], [data-text-element="true"]'
+    );
     const savedStates = [];
-    
+
     textElements.forEach((element, index) => {
       savedStates[index] = {
-        element: element,
+        element,
         originalOpacity: element.style.opacity,
         originalVisibility: element.style.visibility,
         originalBorder: element.style.border,
         originalOutline: element.style.outline,
-        originalDisplay: element.style.display
+        originalDisplay: element.style.display,
       };
     });
 
@@ -75,18 +81,18 @@ export const exportAsImage = async (format = 'png', elementId = 'panel-wrapper',
         transform: 'scale(1)',
         transformOrigin: 'top left',
         width: '800px',
-        height: '400px'
+        height: '400px',
       },
-      filter: (node) => {
+      filter: node => {
         // Exclude UI elements that shouldn't be in export
         const excludeClasses = [
           'resize-handle',
           'react-resizable-handle',
           'selection-border',
           'distance-indicator',
-          'snapping-guide'
+          'snapping-guide',
         ];
-        
+
         if (node.classList) {
           for (const className of excludeClasses) {
             if (node.classList.contains(className)) {
@@ -94,14 +100,14 @@ export const exportAsImage = async (format = 'png', elementId = 'panel-wrapper',
             }
           }
         }
-        
+
         // Exclude dashed borders (selection indicators)
         if (node.style && node.style.border && node.style.border.includes('dashed')) {
           return false;
         }
-        
+
         return true;
-      }
+      },
     };
 
     updateProgress(75, 'Generating image data...');
@@ -153,11 +159,13 @@ export const exportAsImage = async (format = 'png', elementId = 'panel-wrapper',
     return dataUrl;
   } catch (error) {
     console.error('Export failed:', error);
-    
+
     // Ensure we restore states even if export fails
     const panel = document.getElementById(elementId);
     if (panel) {
-      const textElements = panel.querySelectorAll('textarea, span, p, h1, h2, h3, h4, h5, h6, div[contenteditable], [data-text-element="true"]');
+      const textElements = panel.querySelectorAll(
+        'textarea, span, p, h1, h2, h3, h4, h5, h6, div[contenteditable], [data-text-element="true"]'
+      );
       textElements.forEach(element => {
         // Reset only the properties we modify, leave colors intact
         element.style.removeProperty('opacity');
@@ -167,7 +175,7 @@ export const exportAsImage = async (format = 'png', elementId = 'panel-wrapper',
         element.style.removeProperty('display');
       });
     }
-    
+
     throw error;
   }
 };

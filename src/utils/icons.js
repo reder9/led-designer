@@ -5,7 +5,7 @@ const gamingIcons = import.meta.glob('../assets/icons/gaming/*.svg', { eager: tr
 const sportsIcons = import.meta.glob('../assets/icons/sports/*.svg', { eager: true });
 
 // Helper function to process icon modules
-const processIcons = (iconModules) => {
+const processIcons = iconModules => {
   const processed = {};
   for (const path in iconModules) {
     const iconName = path.split('/').pop().replace('.svg', '');
