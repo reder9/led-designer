@@ -45,6 +45,25 @@ export default function ElementRenderer({
     }
   };
 
+  const getIconGlowEffect = () => {
+    if (!isPowerOn) return "none";
+    
+    switch (glowMode) {
+      case "rainbow":
+        return `drop-shadow(0 0 ${10 * textGlowIntensity}px currentColor) drop-shadow(0 0 ${20 * textGlowIntensity}px currentColor)`;
+      
+      case "breathing":
+        const breath = (Math.sin(currentTime * Math.PI) + 1) / 2;
+        return `drop-shadow(0 0 ${10 * textGlowIntensity * breath}px ${glowColor}) drop-shadow(0 0 ${20 * textGlowIntensity * breath}px ${glowColor})`;
+      
+      case "chase":
+        return `drop-shadow(0 0 ${10 * textGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${20 * textGlowIntensity}px ${glowColor})`;
+      
+      default:
+        return `drop-shadow(0 0 ${8 * textGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${15 * textGlowIntensity}px ${glowColor})`;
+    }
+  };
+
   // Use a ref to track if we need to select text on focus
   const selectOnFocusRef = useRef(false);
 
@@ -187,16 +206,17 @@ export default function ElementRenderer({
             width: '100%',
             height: '100%',
             position: 'relative',
-            filter: isPowerOn ? 
-              `drop-shadow(0 0 ${8 * textGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${15 * textGlowIntensity}px ${glowColor})` : 
-              "none"
+            filter: isPowerOn ? getIconGlowEffect() : "none"
           }}>
             <IconComp style={{ 
               width: '100%', 
               height: '100%', 
               pointerEvents: "none",
               color: "#000",
-              filter: isPowerOn ? "url(#coloredInvert)" : "brightness(0.7)"
+              filter: isPowerOn ? 
+                (glowMode === "rainbow" ? "invert(1)" : "url(#coloredInvert)") : 
+                "brightness(0.7)",
+              animation: glowMode === "rainbow" ? "rainbowText 3s linear infinite" : "none"
             }} />
           </div>
         </>
