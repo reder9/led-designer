@@ -24,45 +24,73 @@ export default function useSnapping({ elements, width, height, setGuides, setDis
       const snapToGrid = value => Math.round(value / gridSize) * gridSize;
 
       // --- Panel center snap lines ---
-      const panelCenterX = width / 2 - el.width / 2;
-      const panelCenterY = height / 2 - el.height / 2;
+      const panelCenterX = width / 2;
+      const panelCenterY = height / 2;
+
+      // Try to get actual DOM element dimensions for more accurate centering
+      let elementWidth = el.width;
+      const elementHeight = el.height;
+
+      // For text elements, try to get the actual rendered dimensions
+      if (el.type === 'text') {
+        const domElement = document.querySelector(`[data-element-id="${el.id}"]`);
+        if (domElement) {
+          const textArea = domElement.querySelector('textarea');
+          if (textArea) {
+            // Use the actual text content width for more accurate centering
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const computedStyle = window.getComputedStyle(textArea);
+
+            ctx.font = `${computedStyle.fontStyle} ${computedStyle.fontWeight} ${computedStyle.fontSize} ${computedStyle.fontFamily}`;
+            const textMetrics = ctx.measureText(el.content || 'Text');
+
+            // Use measured text width with minimal padding for more accurate centering
+            elementWidth = Math.max(textMetrics.width + 16, el.width); // 8px padding on each side
+          }
+        }
+      }
+
+      // Calculate element center positions using potentially adjusted dimensions
+      const elementCenterX = x + elementWidth / 2;
+      const elementCenterY = y + elementHeight / 2;
 
       // --- Panel thirds snap lines ---
-      const panelThirdX1 = width / 3 - el.width / 2;
-      const panelThirdX2 = (width * 2) / 3 - el.width / 2;
-      const panelThirdY1 = height / 3 - el.height / 2;
-      const panelThirdY2 = (height * 2) / 3 - el.height / 2;
+      const panelThirdX1 = width / 3;
+      const panelThirdX2 = (width * 2) / 3;
+      const panelThirdY1 = height / 3;
+      const panelThirdY2 = (height * 2) / 3;
 
-      // Check center snapping first
-      if (Math.abs(x - panelCenterX) < snapTolerance) {
-        x = panelCenterX;
-        guides.push({ orientation: 'vertical', position: width / 2, type: 'active' });
+      // Check center snapping first (snap element center to panel center)
+      if (Math.abs(elementCenterX - panelCenterX) < snapTolerance) {
+        x = panelCenterX - elementWidth / 2;
+        guides.push({ orientation: 'vertical', position: panelCenterX, type: 'active' });
       }
 
-      if (Math.abs(y - panelCenterY) < snapTolerance) {
-        y = panelCenterY;
-        guides.push({ orientation: 'horizontal', position: height / 2, type: 'active' });
+      if (Math.abs(elementCenterY - panelCenterY) < snapTolerance) {
+        y = panelCenterY - elementHeight / 2;
+        guides.push({ orientation: 'horizontal', position: panelCenterY, type: 'active' });
       }
 
-      // Check thirds snapping
-      if (Math.abs(x - panelThirdX1) < snapTolerance) {
-        x = panelThirdX1;
-        guides.push({ orientation: 'vertical', position: width / 3, type: 'active' });
+      // Check thirds snapping (snap element center to panel thirds)
+      if (Math.abs(elementCenterX - panelThirdX1) < snapTolerance) {
+        x = panelThirdX1 - elementWidth / 2;
+        guides.push({ orientation: 'vertical', position: panelThirdX1, type: 'active' });
       }
 
-      if (Math.abs(x - panelThirdX2) < snapTolerance) {
-        x = panelThirdX2;
-        guides.push({ orientation: 'vertical', position: (width * 2) / 3, type: 'active' });
+      if (Math.abs(elementCenterX - panelThirdX2) < snapTolerance) {
+        x = panelThirdX2 - elementWidth / 2;
+        guides.push({ orientation: 'vertical', position: panelThirdX2, type: 'active' });
       }
 
-      if (Math.abs(y - panelThirdY1) < snapTolerance) {
-        y = panelThirdY1;
-        guides.push({ orientation: 'horizontal', position: height / 3, type: 'active' });
+      if (Math.abs(elementCenterY - panelThirdY1) < snapTolerance) {
+        y = panelThirdY1 - elementHeight / 2;
+        guides.push({ orientation: 'horizontal', position: panelThirdY1, type: 'active' });
       }
 
-      if (Math.abs(y - panelThirdY2) < snapTolerance) {
-        y = panelThirdY2;
-        guides.push({ orientation: 'horizontal', position: (height * 2) / 3, type: 'active' });
+      if (Math.abs(elementCenterY - panelThirdY2) < snapTolerance) {
+        y = panelThirdY2 - elementHeight / 2;
+        guides.push({ orientation: 'horizontal', position: panelThirdY2, type: 'active' });
       }
 
       // --- Snap relative to other elements ---
