@@ -5,6 +5,7 @@ import { exportAsImage } from '../utils/exportImage';
 import IconControls from './sidebar/IconControls';
 import TextControls from './sidebar/TextControls';
 import ExportModal from './ExportModal';
+import { measureTextWithMinimums } from '../utils/textMeasurement';
 import '../styles/fonts.css';
 
 export default function SidebarLeft({
@@ -161,7 +162,12 @@ export default function SidebarLeft({
   };
 
   const addText = () => {
-    const elementSize = { width: 120, height: 40 };
+    const text = 'Edit me';
+
+    // Measure the text to get proper dimensions
+    const { width, height } = measureTextWithMinimums(text, fontSize, fontFamily);
+    const elementSize = { width, height };
+
     const position = findFreeSpace(elementSize.width, elementSize.height);
 
     if (!position) {
@@ -174,7 +180,7 @@ export default function SidebarLeft({
     const newElement = {
       id: Date.now(),
       type: 'text',
-      content: 'Edit me',
+      content: text,
       x: position.x,
       y: position.y,
       width: elementSize.width,
@@ -251,7 +257,23 @@ export default function SidebarLeft({
     setFontFamily(family);
     if (selectedElement) {
       setElements(
-        elements.map(el => (el.id === selectedElement ? { ...el, fontFamily: family } : el))
+        elements.map(el => {
+          if (el.id === selectedElement) {
+            const updatedElement = { ...el, fontFamily: family };
+            // Auto-resize if it's a text element
+            if (el.type === 'text') {
+              const { width, height } = measureTextWithMinimums(
+                el.content,
+                el.fontSize || fontSize,
+                family
+              );
+              updatedElement.width = width;
+              updatedElement.height = height;
+            }
+            return updatedElement;
+          }
+          return el;
+        })
       );
     }
   };
@@ -262,7 +284,23 @@ export default function SidebarLeft({
     setFontSizeInput(newSize.toString());
     if (selectedElement) {
       setElements(
-        elements.map(el => (el.id === selectedElement ? { ...el, fontSize: newSize } : el))
+        elements.map(el => {
+          if (el.id === selectedElement) {
+            const updatedElement = { ...el, fontSize: newSize };
+            // Auto-resize if it's a text element
+            if (el.type === 'text') {
+              const { width, height } = measureTextWithMinimums(
+                el.content,
+                newSize,
+                el.fontFamily || fontFamily
+              );
+              updatedElement.width = width;
+              updatedElement.height = height;
+            }
+            return updatedElement;
+          }
+          return el;
+        })
       );
     }
   };

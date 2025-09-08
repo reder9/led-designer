@@ -1,5 +1,6 @@
 import { iconComponentMap } from '../utils/iconMap.jsx';
 import { useEffect, useRef } from 'react';
+import { measureTextWithMinimums } from '../utils/textMeasurement';
 
 function ElementRenderer({
   el,
@@ -203,8 +204,30 @@ function ElementRenderer({
         onChange={e => {
           // Update element content when text changes
           if (setElements) {
+            const newContent = e.target.value;
+
+            // Measure the new text dimensions
+            const newDimensions = measureTextWithMinimums(
+              newContent || 'Text', // Fallback text for empty content
+              el.fontSize || 16,
+              el.fontFamily || 'Arial',
+              el.fontWeight || 'normal',
+              el.fontStyle || 'normal',
+              40, // Minimum width
+              30 // Minimum height
+            );
+
             setElements(prev =>
-              prev.map(elem => (elem.id === el.id ? { ...elem, content: e.target.value } : elem))
+              prev.map(elem =>
+                elem.id === el.id
+                  ? {
+                      ...elem,
+                      content: newContent,
+                      width: newDimensions.width,
+                      height: newDimensions.height,
+                    }
+                  : elem
+              )
             );
           }
         }}

@@ -370,10 +370,25 @@ export default function Panel({
             }}
             onDrag={(e, d) => {
               // Get the current element from state to ensure we have the latest dimensions
-              const currentElement = elements.find(elem => elem.id === el.id);
+              let currentElement = elements.find(elem => elem.id === el.id);
               if (!currentElement) return;
 
-              // Apply snapping to show guides, but don't move the element yet
+              // Get the actual current size from the DOM element in case state hasn't updated yet
+              const domElement = e.target.closest('.element-wrapper');
+              if (domElement) {
+                const computedStyle = window.getComputedStyle(domElement);
+                const currentWidth = parseInt(computedStyle.width);
+                const currentHeight = parseInt(computedStyle.height);
+
+                // Create an element object with the most current dimensions
+                currentElement = {
+                  ...currentElement,
+                  width: currentWidth,
+                  height: currentHeight,
+                };
+              }
+
+              // Apply snapping using the current element's updated dimensions
               applySnapping(currentElement, d.x, d.y);
 
               // Don't update element position during drag - let react-rnd handle it naturally
@@ -452,57 +467,25 @@ export default function Panel({
               const newWidth = +ref.style.width;
               const newHeight = +ref.style.height;
 
-              // Check if the new size/position would cause collision
-              const wouldCollide = elements.some(otherEl => {
-                if (otherEl.id === el.id) return false;
+              // Temporarily disable collision detection for resize to debug the issue
+              // TODO: Re-enable with proper collision detection once we identify the problem
 
-                const thisRect = {
-                  left: pos.x,
-                  right: pos.x + newWidth,
-                  top: pos.y,
-                  bottom: pos.y + newHeight,
-                };
-
-                const otherRect = {
-                  left: otherEl.x,
-                  right: otherEl.x + otherEl.width,
-                  top: otherEl.y,
-                  bottom: otherEl.y + otherEl.height,
-                };
-
-                // Check for overlap with buffer
-                const buffer = 5;
-                return !(
-                  thisRect.right + buffer <= otherRect.left ||
-                  thisRect.left >= otherRect.right + buffer ||
-                  thisRect.bottom + buffer <= otherRect.top ||
-                  thisRect.top >= otherRect.bottom + buffer
+              // Always update the element size
+              setElements(prev => {
+                const updated = prev.map(x =>
+                  x.id === el.id
+                    ? {
+                        ...x,
+                        x: pos.x,
+                        y: pos.y,
+                        width: newWidth,
+                        height: newHeight,
+                      }
+                    : x
                 );
+                saveToHistory(updated);
+                return updated;
               });
-
-              if (wouldCollide) {
-                // If there would be a collision, force the ref to revert to original size
-                ref.style.width = `${el.width}px`;
-                ref.style.height = `${el.height}px`;
-                ref.style.transform = `translate(${el.x}px, ${el.y}px)`;
-              } else {
-                // If no collision, update size and position
-                setElements(prev => {
-                  const updated = prev.map(x =>
-                    x.id === el.id
-                      ? {
-                          ...x,
-                          x: pos.x,
-                          y: pos.y,
-                          width: newWidth,
-                          height: newHeight,
-                        }
-                      : x
-                  );
-                  saveToHistory(updated);
-                  return updated;
-                });
-              }
             }}
             onClick={e => handleElementClick(e, el)}
             onDoubleClick={e => handleElementClick(e, el)}
