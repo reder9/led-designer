@@ -31,22 +31,26 @@ export default function useSnapping({ elements, width, height, setGuides, setDis
       let elementWidth = el.width;
       const elementHeight = el.height;
 
-      // For text elements, try to get the actual rendered dimensions
+      // For text elements, get the actual visual width from the DOM
       if (el.type === 'text') {
         const domElement = document.querySelector(`[data-element-id="${el.id}"]`);
         if (domElement) {
           const textArea = domElement.querySelector('textarea');
-          if (textArea) {
-            // Use the actual text content width for more accurate centering
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const computedStyle = window.getComputedStyle(textArea);
+          if (textArea && el.content && el.content.trim()) {
+            // Create a temporary span to measure the actual rendered text width
+            const measureSpan = document.createElement('span');
+            measureSpan.style.visibility = 'hidden';
+            measureSpan.style.position = 'absolute';
+            measureSpan.style.whiteSpace = 'nowrap';
+            measureSpan.style.font = window.getComputedStyle(textArea).font;
+            measureSpan.textContent = el.content;
 
-            ctx.font = `${computedStyle.fontStyle} ${computedStyle.fontWeight} ${computedStyle.fontSize} ${computedStyle.fontFamily}`;
-            const textMetrics = ctx.measureText(el.content || 'Text');
+            document.body.appendChild(measureSpan);
+            const actualTextWidth = measureSpan.getBoundingClientRect().width;
+            document.body.removeChild(measureSpan);
 
-            // Use measured text width with minimal padding for more accurate centering
-            elementWidth = Math.max(textMetrics.width + 16, el.width); // 8px padding on each side
+            // Use actual text width plus minimal padding for centering
+            elementWidth = actualTextWidth + 20; // 10px padding on each side
           }
         }
       }

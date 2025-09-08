@@ -21,12 +21,26 @@ export const measureTextDimensions = (
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
+  // Handle special font cases - Press Start 2P needs exact font name
+  let adjustedFontFamily = fontFamily;
+  if (fontFamily === 'Press Start 2P') {
+    adjustedFontFamily = '"Press Start 2P", monospace';
+  }
+
   // Set font properties
-  ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+  ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${adjustedFontFamily}`;
+
+  // For Press Start 2P, we need to account for its pixel-perfect nature
+  const isPressStart = fontFamily === 'Press Start 2P';
 
   // Split text into lines
   const lines = text.split('\n');
-  const lineHeight = fontSize * 1.2; // Standard line height multiplier
+  let lineHeight = fontSize * 1.2; // Standard line height multiplier
+
+  // Press Start 2P has tighter line spacing
+  if (isPressStart) {
+    lineHeight = fontSize * 1.1;
+  }
 
   // Measure each line and find the maximum width
   let maxWidth = 0;
@@ -35,8 +49,8 @@ export const measureTextDimensions = (
     maxWidth = Math.max(maxWidth, metrics.width);
   });
 
-  // Add padding for better visual appearance
-  const padding = 8; // 4px on each side
+  // Adjust padding based on font - Press Start 2P needs less padding due to its nature
+  const padding = isPressStart ? 4 : 8; // 2px vs 4px on each side
 
   return {
     width: Math.ceil(maxWidth) + padding,
