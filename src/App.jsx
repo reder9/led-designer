@@ -85,10 +85,35 @@ export default function App() {
     <div className='h-screen flex flex-col overflow-hidden fixed inset-0'>
       {/* Main Content */}
       {isMobile ? (
-        // --- MOBILE LAYOUT: Text/Icon Options → Panel → Remote
-        <div className='flex-1 flex flex-col bg-gradient-to-br from-gray-800 to-gray-900'>
-          {/* Text/Icon Options at top */}
-          <div className='bg-gray-900 border-b border-gray-700 p-2'>
+        // --- MOBILE LAYOUT: Panel → Left Sidebar → Right Sidebar
+        <div className='flex-1 flex flex-col bg-gradient-to-br from-gray-800 to-gray-900 overflow-y-auto'>
+          {/* Panel on top */}
+          <div className='flex-1 flex items-center justify-center border-b border-gray-700 p-4'>
+            <div className='w-full max-w-5xl'>
+              <div className='relative w-full aspect-[2/1] flex items-center justify-center'>
+                <Panel
+                  elements={elements}
+                  setElements={setElements}
+                  selectedElement={selectedElement}
+                  setSelectedElement={setSelectedElement}
+                  glowColor={glowColor}
+                  isPowerOn={isPowerOn}
+                  roundedEdges={roundedEdges}
+                  borderRadius={borderRadius}
+                  width={baseWidth}
+                  height={baseHeight}
+                  glowMode={glowMode}
+                  brightness={brightness}
+                  speed={speed}
+                  showLedBorder={showLedBorder}
+                  textGlowIntensity={textGlowIntensity}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Left Sidebar (middle) */}
+          <div className='bg-gray-900 border-b border-gray-700 p-4'>
             <SidebarLeft
               elements={elements}
               setElements={setElements}
@@ -114,37 +139,11 @@ export default function App() {
               height={baseHeight}
               showLedBorder={showLedBorder}
               setShowLedBorder={setShowLedBorder}
-              isMobile={true}
             />
           </div>
 
-          {/* Panel in middle */}
-          <div className='flex-1 flex items-center justify-center p-2'>
-            <div className='w-full max-w-full'>
-              <div className='relative w-full aspect-[2/1] flex items-center justify-center'>
-                <Panel
-                  elements={elements}
-                  setElements={setElements}
-                  selectedElement={selectedElement}
-                  setSelectedElement={setSelectedElement}
-                  glowColor={glowColor}
-                  isPowerOn={isPowerOn}
-                  roundedEdges={roundedEdges}
-                  borderRadius={borderRadius}
-                  width={baseWidth}
-                  height={baseHeight}
-                  glowMode={glowMode}
-                  brightness={brightness}
-                  speed={speed}
-                  showLedBorder={showLedBorder}
-                  textGlowIntensity={textGlowIntensity}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Remote at bottom */}
-          <div className='bg-gray-800 border-t border-gray-700 p-2'>
+          {/* Right Sidebar (bottom remote) */}
+          <div className='bg-gray-800 p-4'>
             <SidebarRight
               glowColor={glowColor}
               setGlowColor={setGlowColor}
@@ -156,7 +155,6 @@ export default function App() {
               setGlowMode={setGlowMode}
               speed={speed}
               setSpeed={setSpeed}
-              isMobile={true}
             />
           </div>
         </div>

@@ -28,7 +28,7 @@ function ElementRenderer({
 
   // Calculate dynamic effects for text
   const getTextGlowEffect = () => {
-    if (!isPowerOn || glowMode === 'export') return 'none';
+    if (!isPowerOn) return 'none';
 
     switch (glowMode) {
       case 'rainbow': {
@@ -49,7 +49,7 @@ function ElementRenderer({
   };
 
   const getIconGlowEffect = () => {
-    if (!isPowerOn || glowMode === 'export') return 'none';
+    if (!isPowerOn) return 'none';
 
     switch (glowMode) {
       case 'rainbow': {
