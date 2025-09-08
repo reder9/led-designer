@@ -393,9 +393,31 @@ export default function Panel({
                 });
                 clearGuides();
               }}
+              onResize={(e, dir, ref, delta, pos) => {
+                // Log what's happening during resize to debug
+                console.log('onResize:', {
+                  element: safeElement.id,
+                  type: safeElement.type,
+                  direction: dir,
+                  newWidth: ref.style.width,
+                  newHeight: ref.style.height,
+                  delta,
+                  pos,
+                });
+              }}
               onResizeStop={(e, dir, ref, delta, pos) => {
                 const newWidth = +ref.style.width;
                 const newHeight = +ref.style.height;
+
+                console.log('onResizeStop:', {
+                  element: safeElement.id,
+                  type: safeElement.type,
+                  direction: dir,
+                  finalWidth: newWidth,
+                  finalHeight: newHeight,
+                  delta,
+                  pos,
+                });
 
                 // Temporarily disable collision detection for resize to debug the issue
                 // TODO: Re-enable with proper collision detection once we identify the problem
