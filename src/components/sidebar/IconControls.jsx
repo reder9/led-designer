@@ -9,6 +9,7 @@ function IconControls({
   _selectedElement,
   _selectedElement2,
   _saveToHistory,
+  updateIconContent, // Accept the updateIconContent function as a prop
 }) {
   const categories = [
     { name: 'Social', emoji: '📱', key: 'social' },
@@ -16,10 +17,12 @@ function IconControls({
     { name: 'Sports', emoji: '⚽', key: 'sports' },
   ];
 
-  const updateIconContent = iconName => {
-    // TODO: Implement icon update functionality
-    console.warn('updateIconContent not implemented:', iconName);
-  };
+  // Use the passed updateIconContent function, or provide a fallback
+  const handleUpdateIconContent =
+    updateIconContent ||
+    (iconName => {
+      console.warn('updateIconContent not implemented:', iconName);
+    });
 
   return (
     <div className='space-y-4'>
@@ -40,7 +43,7 @@ function IconControls({
                 {Object.entries(iconsByCategory[category.key] || {}).map(([iconName, iconUrl]) => (
                   <button
                     key={iconName}
-                    onClick={() => updateIconContent(iconName)}
+                    onClick={() => handleUpdateIconContent(iconName)}
                     className='p-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors group relative'
                     title={iconName.replace(/-/g, ' ').replace(/(^|\s)\S/g, l => l.toUpperCase())}
                   >

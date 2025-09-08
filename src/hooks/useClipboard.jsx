@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { findNearbyFreeSpace } from '../utils/collision';
 
 export default function useClipboard({
   elements,
@@ -6,6 +7,8 @@ export default function useClipboard({
   selectedElement,
   setSelectedElement,
   saveToHistory,
+  panelWidth,
+  panelHeight,
 }) {
   const copy = useCallback(() => {
     if (selectedElement) {
@@ -19,13 +22,13 @@ export default function useClipboard({
         };
         navigator.clipboard.writeText(JSON.stringify(clipboardData));
 
-        // Visual feedback
+        // Visual feedback - subtle glow effect without changing element size/opacity
         const element = document.querySelector(`[data-element-id="${selectedElement}"]`);
         if (element) {
-          element.style.animation = 'flash 0.3s';
+          element.style.animation = 'copyFeedback 0.4s ease-out';
           setTimeout(() => {
             if (element) element.style.animation = '';
-          }, 300);
+          }, 400);
         }
       }
     }
@@ -64,25 +67,31 @@ export default function useClipboard({
           // Remove clipboard metadata
           const { _isClipboardElement, _sourceApp, ...elementData } = parsed;
 
-          // Calculate paste position
-          let pasteX = x ?? 50;
-          let pasteY = y ?? 50;
+          // Calculate paste position with collision detection
+          const pasteX = x ?? elementData.x + 20;
+          const pasteY = y ?? elementData.y + 20;
 
-          // If no specific position provided, paste near original or offset from existing elements
-          if (x === undefined || y === undefined) {
-            pasteX = elementData.x + 20;
-            pasteY = elementData.y + 20;
+          // Find a free space for the pasted element
+          const freeSpace = findNearbyFreeSpace(
+            pasteX,
+            pasteY,
+            elementData.width,
+            elementData.height,
+            elements,
+            panelWidth || 800,
+            panelHeight || 400
+          );
 
-            // Make sure it doesn't go outside bounds
-            if (pasteX > 750) pasteX = 50;
-            if (pasteY > 350) pasteY = 50;
+          if (!freeSpace) {
+            console.warn('No free space available for paste operation');
+            return null;
           }
 
           const newElement = {
             ...elementData,
             id: Date.now() + Math.random(), // Ensure unique ID
-            x: pasteX,
-            y: pasteY,
+            x: freeSpace.x,
+            y: freeSpace.y,
           };
 
           const updatedElements = [...elements, newElement];
@@ -102,23 +111,35 @@ export default function useClipboard({
         console.warn('Clipboard paste failed:', err);
       }
     },
-    [elements, setElements, setSelectedElement, saveToHistory]
+    [elements, setElements, setSelectedElement, saveToHistory, panelWidth, panelHeight]
   );
 
   const duplicate = useCallback(() => {
     if (selectedElement) {
       const el = elements.find(e => e.id === selectedElement);
       if (el) {
+        // Find a free space for the duplicated element
+        const freeSpace = findNearbyFreeSpace(
+          el.x + 20,
+          el.y + 20,
+          el.width,
+          el.height,
+          elements,
+          panelWidth || 800,
+          panelHeight || 400
+        );
+
+        if (!freeSpace) {
+          console.warn('No free space available for duplicate operation');
+          return;
+        }
+
         const newElement = {
           ...el,
           id: Date.now() + Math.random(),
-          x: el.x + 20,
-          y: el.y + 20,
+          x: freeSpace.x,
+          y: freeSpace.y,
         };
-
-        // Make sure it doesn't go outside bounds
-        if (newElement.x > 750) newElement.x = 50;
-        if (newElement.y > 350) newElement.y = 50;
 
         const updatedElements = [...elements, newElement];
         setElements(updatedElements);
@@ -126,7 +147,15 @@ export default function useClipboard({
         saveToHistory(updatedElements);
       }
     }
-  }, [elements, selectedElement, setElements, setSelectedElement, saveToHistory]);
+  }, [
+    elements,
+    selectedElement,
+    setElements,
+    setSelectedElement,
+    saveToHistory,
+    panelWidth,
+    panelHeight,
+  ]);
 
   return { copy, cut, paste, duplicate };
 }

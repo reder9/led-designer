@@ -15,8 +15,6 @@ export default function useKeyboardShortcuts({
   setSelectedElement,
   selectAll,
   deselect,
-  bringToFront,
-  sendToBack,
 }) {
   useEffect(() => {
     const handleKeyDown = e => {
@@ -93,20 +91,6 @@ export default function useKeyboardShortcuts({
           }
           break;
 
-        // Layer management
-        case ']':
-          if (ctrlOrCmd && selectedElement && bringToFront) {
-            e.preventDefault();
-            bringToFront();
-          }
-          break;
-        case '[':
-          if (ctrlOrCmd && selectedElement && sendToBack) {
-            e.preventDefault();
-            sendToBack();
-          }
-          break;
-
         // Movement with arrow keys
         case 'ArrowUp':
         case 'ArrowDown':
@@ -171,7 +155,5 @@ export default function useKeyboardShortcuts({
     setSelectedElement,
     selectAll,
     deselect,
-    bringToFront,
-    sendToBack,
   ]);
 }

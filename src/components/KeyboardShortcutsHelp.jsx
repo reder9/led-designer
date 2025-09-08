@@ -53,14 +53,6 @@ export default function KeyboardShortcutsHelp() {
         { keys: ['Shift', '+ Arrow'], action: 'Move selected element by 10px' },
       ],
     },
-    {
-      category: 'Layers',
-      items: [
-        { keys: ['Ctrl', ']'], action: 'Bring element to front' },
-        { keys: ['Ctrl', '['], action: 'Send element to back' },
-      ],
-    },
-    { category: 'Context Menu', items: [{ keys: ['Right Click'], action: 'Open context menu' }] },
   ];
 
   if (!isVisible) {

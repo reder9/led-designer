@@ -5,7 +5,7 @@ import useClipboard from '../hooks/useClipboard';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import useSnapping from '../hooks/useSnapping';
 import './Panel.css';
-import { createContextMenu } from '../utils/contextMenu';
+import { findNearbyFreeSpace } from '../utils/collision';
 import ElementRenderer from './ElementRenderer';
 import SnappingGuides from './SnappingGuides';
 import DistanceIndicators from './DistanceIndicators';
@@ -35,99 +35,6 @@ export default function Panel({
   // Set default glowMode to rainbow if not provided
   const effectiveGlowMode = glowMode || 'rainbow';
 
-  // Helper function to find nearby free space when collision occurs
-  const findNearbyFreeSpace = (preferredX, preferredY, elementWidth, elementHeight) => {
-    const gridSize = 20;
-    const panelWidth = width;
-    const panelHeight = height;
-    const padding = 10;
-
-    // Try positions in a spiral pattern around the preferred location
-    for (let radius = 0; radius < 200; radius += gridSize) {
-      for (let angle = 0; angle < 360; angle += 45) {
-        const x = Math.max(
-          padding,
-          Math.min(
-            panelWidth - elementWidth - padding,
-            preferredX + radius * Math.cos((angle * Math.PI) / 180)
-          )
-        );
-        const y = Math.max(
-          padding,
-          Math.min(
-            panelHeight - elementHeight - padding,
-            preferredY + radius * Math.sin((angle * Math.PI) / 180)
-          )
-        );
-
-        // Check if this position is free
-        const wouldCollide = elements.some(otherEl => {
-          const thisRect = {
-            left: x,
-            right: x + elementWidth,
-            top: y,
-            bottom: y + elementHeight,
-          };
-
-          const otherRect = {
-            left: otherEl.x,
-            right: otherEl.x + otherEl.width,
-            top: otherEl.y,
-            bottom: otherEl.y + otherEl.height,
-          };
-
-          const buffer = 5;
-          return !(
-            thisRect.right + buffer <= otherRect.left ||
-            thisRect.left >= otherRect.right + buffer ||
-            thisRect.bottom + buffer <= otherRect.top ||
-            thisRect.top >= otherRect.bottom + buffer
-          );
-        });
-
-        if (!wouldCollide) {
-          return { x, y };
-        }
-      }
-    }
-
-    // If no free space found, try a grid search as final fallback
-    for (let y = padding; y < panelHeight - elementHeight - padding; y += gridSize) {
-      for (let x = padding; x < panelWidth - elementWidth - padding; x += gridSize) {
-        const wouldCollide = elements.some(otherEl => {
-          const thisRect = {
-            left: x,
-            right: x + elementWidth,
-            top: y,
-            bottom: y + elementHeight,
-          };
-
-          const otherRect = {
-            left: otherEl.x,
-            right: otherEl.x + otherEl.width,
-            top: otherEl.y,
-            bottom: otherEl.y + otherEl.height,
-          };
-
-          const buffer = 5;
-          return !(
-            thisRect.right + buffer <= otherRect.left ||
-            thisRect.left >= otherRect.right + buffer ||
-            thisRect.bottom + buffer <= otherRect.top ||
-            thisRect.top >= otherRect.bottom + buffer
-          );
-        });
-
-        if (!wouldCollide) {
-          return { x, y };
-        }
-      }
-    }
-
-    // Ultimate fallback - return null to indicate no space available
-    return null;
-  };
-
   // Animation clock
   useEffect(() => {
     if (!isPowerOn) return;
@@ -143,6 +50,8 @@ export default function Panel({
     selectedElement,
     setSelectedElement,
     saveToHistory,
+    panelWidth: width,
+    panelHeight: height,
   });
 
   // Delete functionality
@@ -152,39 +61,6 @@ export default function Panel({
       setElements(updatedElements);
       setSelectedElement(null);
       saveToHistory(updatedElements);
-    }
-  };
-
-  // Layer management
-  const bringToFront = () => {
-    if (selectedElement) {
-      const elementIndex = elements.findIndex(el => el.id === selectedElement);
-      if (elementIndex !== -1 && elementIndex !== elements.length - 1) {
-        const element = elements[elementIndex];
-        const newElements = [
-          ...elements.slice(0, elementIndex),
-          ...elements.slice(elementIndex + 1),
-          element,
-        ];
-        setElements(newElements);
-        saveToHistory(newElements);
-      }
-    }
-  };
-
-  const sendToBack = () => {
-    if (selectedElement) {
-      const elementIndex = elements.findIndex(el => el.id === selectedElement);
-      if (elementIndex !== -1 && elementIndex !== 0) {
-        const element = elements[elementIndex];
-        const newElements = [
-          element,
-          ...elements.slice(0, elementIndex),
-          ...elements.slice(elementIndex + 1),
-        ];
-        setElements(newElements);
-        saveToHistory(newElements);
-      }
     }
   };
 
@@ -282,36 +158,7 @@ export default function Panel({
     isEditing,
     setIsEditing,
     setSelectedElement,
-    bringToFront,
-    sendToBack,
   });
-
-  const handleContextMenu = (e, id) => {
-    e.preventDefault();
-    setSelectedElement(id);
-
-    createContextMenu(e.pageX, e.pageY, {
-      onCopy: copy,
-      onCut: cut,
-      onPaste: () => paste(e.offsetX, e.offsetY),
-      onDuplicate: duplicate,
-      onDelete: deleteSelected,
-      onBringToFront: bringToFront,
-      onSendToBack: sendToBack,
-      hasSelectedElement: !!selectedElement,
-      canPaste: true,
-    });
-  };
-
-  const handlePanelContextMenu = e => {
-    e.preventDefault();
-
-    createContextMenu(e.pageX, e.pageY, {
-      onPaste: () => paste(e.nativeEvent.offsetX, e.nativeEvent.offsetY),
-      hasSelectedElement: false,
-      canPaste: true,
-    });
-  };
 
   const handleElementClick = (e, el) => {
     e.stopPropagation();
@@ -466,7 +313,6 @@ export default function Panel({
         setSelectedElement(null);
         setIsEditing(false);
       }}
-      onContextMenu={handlePanelContextMenu}
     >
       {/* Smooth, colorful LED-style glow border */}
       {showLedBorder && isPowerOn && (
@@ -523,56 +369,35 @@ export default function Panel({
               setSelectedElement(el.id);
             }}
             onDrag={(e, d) => {
-              const snapped = applySnapping(el, d.x, d.y);
+              // Get the current element from state to ensure we have the latest dimensions
+              const currentElement = elements.find(elem => elem.id === el.id);
+              if (!currentElement) return;
 
-              // Check for collisions with other elements during drag
-              const wouldCollide = elements.some(otherEl => {
-                if (otherEl.id === el.id) return false;
+              // Apply snapping to show guides, but don't move the element yet
+              applySnapping(currentElement, d.x, d.y);
 
-                const thisRect = {
-                  left: snapped.x,
-                  right: snapped.x + el.width,
-                  top: snapped.y,
-                  bottom: snapped.y + el.height,
-                };
-
-                const otherRect = {
-                  left: otherEl.x,
-                  right: otherEl.x + otherEl.width,
-                  top: otherEl.y,
-                  bottom: otherEl.y + otherEl.height,
-                };
-
-                // Check for overlap with a small buffer to prevent touching
-                const buffer = 5;
-                return !(
-                  thisRect.right + buffer <= otherRect.left ||
-                  thisRect.left >= otherRect.right + buffer ||
-                  thisRect.bottom + buffer <= otherRect.top ||
-                  thisRect.top >= otherRect.bottom + buffer
-                );
-              });
-
-              // Only update position if no collision
-              if (!wouldCollide) {
-                setElements(prev =>
-                  prev.map(x => (x.id === el.id ? { ...x, x: snapped.x, y: snapped.y } : x))
-                );
-              }
+              // Don't update element position during drag - let react-rnd handle it naturally
+              // This prevents the drift issue by keeping the element following the mouse cursor
+              // The snapping guides are shown via the applySnapping call above
             }}
             onDragStop={(_e, _d) => {
               setIsDragging(false);
-              const snapped = applySnapping(el, _d.x, _d.y);
+
+              // Get the current element from state to ensure we have the latest dimensions
+              const currentElement = elements.find(elem => elem.id === el.id);
+              if (!currentElement) return;
+
+              const snapped = applySnapping(currentElement, _d.x, _d.y);
 
               // Check for collisions with other elements
               const wouldCollide = elements.some(otherEl => {
-                if (otherEl.id === el.id) return false;
+                if (otherEl.id === currentElement.id) return false;
 
                 const thisRect = {
                   left: snapped.x,
-                  right: snapped.x + el.width,
+                  right: snapped.x + currentElement.width,
                   top: snapped.y,
-                  bottom: snapped.y + el.height,
+                  bottom: snapped.y + currentElement.height,
                 };
 
                 const otherRect = {
@@ -594,7 +419,15 @@ export default function Panel({
 
               if (wouldCollide) {
                 // If there would be a collision, find a nearby free space
-                const freeSpace = findNearbyFreeSpace(snapped.x, snapped.y, el.width, el.height);
+                const freeSpace = findNearbyFreeSpace(
+                  snapped.x,
+                  snapped.y,
+                  currentElement.width,
+                  currentElement.height,
+                  elements,
+                  width,
+                  height
+                );
                 if (freeSpace) {
                   setElements(prev => {
                     const updated = prev.map(x =>
@@ -616,15 +449,18 @@ export default function Panel({
               clearGuides();
             }}
             onResizeStop={(e, dir, ref, delta, pos) => {
+              const newWidth = +ref.style.width;
+              const newHeight = +ref.style.height;
+
               // Check if the new size/position would cause collision
               const wouldCollide = elements.some(otherEl => {
                 if (otherEl.id === el.id) return false;
 
                 const thisRect = {
                   left: pos.x,
-                  right: pos.x + parseInt(ref.style.width),
+                  right: pos.x + newWidth,
                   top: pos.y,
-                  bottom: pos.y + parseInt(ref.style.height),
+                  bottom: pos.y + newHeight,
                 };
 
                 const otherRect = {
@@ -645,8 +481,10 @@ export default function Panel({
               });
 
               if (wouldCollide) {
-                // If there would be a collision, revert to original size/position
-                setElements(prev => [...prev]);
+                // If there would be a collision, force the ref to revert to original size
+                ref.style.width = `${el.width}px`;
+                ref.style.height = `${el.height}px`;
+                ref.style.transform = `translate(${el.x}px, ${el.y}px)`;
               } else {
                 // If no collision, update size and position
                 setElements(prev => {
@@ -656,8 +494,8 @@ export default function Panel({
                           ...x,
                           x: pos.x,
                           y: pos.y,
-                          width: +ref.style.width,
-                          height: +ref.style.height,
+                          width: newWidth,
+                          height: newHeight,
                         }
                       : x
                   );
@@ -668,7 +506,6 @@ export default function Panel({
             }}
             onClick={e => handleElementClick(e, el)}
             onDoubleClick={e => handleElementClick(e, el)}
-            onContextMenu={e => handleContextMenu(e, el.id)}
             disableDragging={isEditing}
             enableResizing={{
               top: !isEditing,
