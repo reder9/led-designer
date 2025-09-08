@@ -27,15 +27,42 @@ export default function useSnapping({ elements, width, height, setGuides, setDis
       const panelCenterX = width / 2 - el.width / 2;
       const panelCenterY = height / 2 - el.height / 2;
 
+      // --- Panel thirds snap lines ---
+      const panelThirdX1 = width / 3 - el.width / 2;
+      const panelThirdX2 = (width * 2) / 3 - el.width / 2;
+      const panelThirdY1 = height / 3 - el.height / 2;
+      const panelThirdY2 = (height * 2) / 3 - el.height / 2;
+
       // Check center snapping first
       if (Math.abs(x - panelCenterX) < snapTolerance) {
         x = panelCenterX;
-        guides.push({ orientation: 'vertical', position: width / 2 });
+        guides.push({ orientation: 'vertical', position: width / 2, type: 'active' });
       }
 
       if (Math.abs(y - panelCenterY) < snapTolerance) {
         y = panelCenterY;
-        guides.push({ orientation: 'horizontal', position: height / 2 });
+        guides.push({ orientation: 'horizontal', position: height / 2, type: 'active' });
+      }
+
+      // Check thirds snapping
+      if (Math.abs(x - panelThirdX1) < snapTolerance) {
+        x = panelThirdX1;
+        guides.push({ orientation: 'vertical', position: width / 3, type: 'active' });
+      }
+
+      if (Math.abs(x - panelThirdX2) < snapTolerance) {
+        x = panelThirdX2;
+        guides.push({ orientation: 'vertical', position: (width * 2) / 3, type: 'active' });
+      }
+
+      if (Math.abs(y - panelThirdY1) < snapTolerance) {
+        y = panelThirdY1;
+        guides.push({ orientation: 'horizontal', position: height / 3, type: 'active' });
+      }
+
+      if (Math.abs(y - panelThirdY2) < snapTolerance) {
+        y = panelThirdY2;
+        guides.push({ orientation: 'horizontal', position: (height * 2) / 3, type: 'active' });
       }
 
       // --- Snap relative to other elements ---
@@ -54,7 +81,7 @@ export default function useSnapping({ elements, width, height, setGuides, setDis
         alignments.forEach(({ el: elX, other: otherX }) => {
           if (Math.abs(elX - otherX) < snapTolerance) {
             x = otherX - (elX - x);
-            guides.push({ orientation: 'vertical', position: otherX });
+            guides.push({ orientation: 'vertical', position: otherX, type: 'element' });
           }
         });
 
@@ -70,7 +97,7 @@ export default function useSnapping({ elements, width, height, setGuides, setDis
         verticalAlignments.forEach(({ el: elY, other: otherY }) => {
           if (Math.abs(elY - otherY) < snapTolerance) {
             y = otherY - (elY - y);
-            guides.push({ orientation: 'horizontal', position: otherY });
+            guides.push({ orientation: 'horizontal', position: otherY, type: 'element' });
           }
         });
       });
@@ -81,8 +108,23 @@ export default function useSnapping({ elements, width, height, setGuides, setDis
         y = snapToGrid(y);
       }
 
+      // Add static guide lines for panel divisions (always show)
+      const staticGuides = [
+        // Center guides
+        { orientation: 'vertical', position: width / 2, type: 'static-center' },
+        { orientation: 'horizontal', position: height / 2, type: 'static-center' },
+        // Third guides
+        { orientation: 'vertical', position: width / 3, type: 'static-third' },
+        { orientation: 'vertical', position: (width * 2) / 3, type: 'static-third' },
+        { orientation: 'horizontal', position: height / 3, type: 'static-third' },
+        { orientation: 'horizontal', position: (height * 2) / 3, type: 'static-third' },
+      ];
+
+      // Combine static guides with active snapping guides
+      const allGuides = [...staticGuides, ...guides];
+
       // Update state
-      setGuides(guides);
+      setGuides(allGuides);
       setDistanceIndicators(distanceIndicators);
 
       return { x, y };
