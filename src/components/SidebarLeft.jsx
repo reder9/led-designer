@@ -20,19 +20,20 @@ export default function SidebarLeft({
   roundedEdges,
   setRoundedEdges,
   saveToHistory,
-  _isPowerOn,
-  _textGlowIntensity,
-  _setTextGlowIntensity,
-  _glowColor,
-  _setGlowColor,
-  _glowMode,
-  _setGlowMode,
+  isPowerOn,
+  setIsPowerOn,
+  textGlowIntensity,
+  setTextGlowIntensity,
+  glowColor,
+  setGlowColor,
+  glowMode,
+  setGlowMode,
   borderRadius,
   setBorderRadius,
   width,
   height,
-  _showLedBorder,
-  _setShowLedBorder,
+  showLedBorder,
+  setShowLedBorder,
   _setShowExportModal,
   _showingKeyboardShortcuts,
   _setShowingKeyboardShortcuts,
@@ -48,13 +49,37 @@ export default function SidebarLeft({
 
   // Handle export with loading modal
   const handleExport = async (_format, _message) => {
+    // Save current panel state
+    const originalGlowMode = glowMode;
+    const originalGlowColor = glowColor;
+    const originalIsPowerOn = isPowerOn;
+    const originalTextGlowIntensity = textGlowIntensity;
+    const originalShowLedBorder = showLedBorder;
+
     try {
       setIsExporting(true);
       setExportProgress(0);
 
+      // Set panel for clean export with cyan color but NO glow effects
+      setIsPowerOn(true); // Keep elements visible and bright
+      setGlowMode('solid'); // Set to solid mode (no animated effects)
+      setGlowColor('#00FFFF'); // Set color to cyan
+      setTextGlowIntensity(0); // Completely disable text glow
+      setShowLedBorder(false); // Disable LED border glow
+
+      // Small delay to let the state changes render
+      await new Promise(resolve => setTimeout(resolve, 150));
+
       await exportAsImage('png', 'panel-wrapper', (progress, _message) => {
         setExportProgress(progress);
       });
+
+      // Restore original panel state
+      setGlowMode(originalGlowMode);
+      setGlowColor(originalGlowColor);
+      setIsPowerOn(originalIsPowerOn);
+      setTextGlowIntensity(originalTextGlowIntensity);
+      setShowLedBorder(originalShowLedBorder);
 
       // Keep modal visible briefly to show completion
       setTimeout(() => {
@@ -63,6 +88,14 @@ export default function SidebarLeft({
       }, 800);
     } catch (error) {
       console.error('Export failed:', error);
+
+      // Ensure we restore original state even on error
+      setGlowMode(originalGlowMode);
+      setGlowColor(originalGlowColor);
+      setIsPowerOn(originalIsPowerOn);
+      setTextGlowIntensity(originalTextGlowIntensity);
+      setShowLedBorder(originalShowLedBorder);
+
       setIsExporting(false);
       setExportProgress(0);
       // You could add error toast notification here
@@ -308,7 +341,29 @@ export default function SidebarLeft({
   const updateTextFormat = (property, value) => {
     if (selectedElement && selectedText) {
       setElements(
-        elements.map(el => (el.id === selectedElement ? { ...el, [property]: value } : el))
+        elements.map(el => {
+          if (el.id === selectedElement) {
+            const updatedElement = { ...el, [property]: value };
+            // Auto-resize if it's a text element and the property affects text dimensions
+            if (el.type === 'text' && (property === 'fontWeight' || property === 'fontStyle')) {
+              const currentFontWeight =
+                property === 'fontWeight' ? value : el.fontWeight || 'normal';
+              const currentFontStyle = property === 'fontStyle' ? value : el.fontStyle || 'normal';
+
+              const { width, height } = measureTextWithMinimums(
+                el.content,
+                el.fontSize || fontSize,
+                el.fontFamily || fontFamily,
+                currentFontWeight,
+                currentFontStyle
+              );
+              updatedElement.width = width;
+              updatedElement.height = height;
+            }
+            return updatedElement;
+          }
+          return el;
+        })
       );
     }
   };

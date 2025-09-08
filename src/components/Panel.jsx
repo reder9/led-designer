@@ -5,7 +5,7 @@ import useClipboard from '../hooks/useClipboard';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import useSnapping from '../hooks/useSnapping';
 import './Panel.css';
-import { findNearbyFreeSpace } from '../utils/collision';
+import { findNearbyFreeSpace as _findNearbyFreeSpace } from '../utils/collision';
 import ElementRenderer from './ElementRenderer';
 import SnappingGuides from './SnappingGuides';
 import DistanceIndicators from './DistanceIndicators';
@@ -28,7 +28,7 @@ export default function Panel({
   textGlowIntensity = 1.0,
 }) {
   const textareaRefs = useRef({});
-  const [_isDragging, setIsDragging] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -89,43 +89,12 @@ export default function Panel({
               break;
           }
 
-          // Check for collisions with other elements
-          const wouldCollide = elements.some(otherEl => {
-            if (otherEl.id === element.id) return false;
-
-            const thisRect = {
-              left: newX,
-              right: newX + element.width,
-              top: newY,
-              bottom: newY + element.height,
-            };
-
-            const otherRect = {
-              left: otherEl.x,
-              right: otherEl.x + otherEl.width,
-              top: otherEl.y,
-              bottom: otherEl.y + otherEl.height,
-            };
-
-            // Check for overlap with buffer
-            const buffer = 5;
-            return !(
-              thisRect.right + buffer <= otherRect.left ||
-              thisRect.left >= otherRect.right + buffer ||
-              thisRect.bottom + buffer <= otherRect.top ||
-              thisRect.top >= otherRect.bottom + buffer
-            );
-          });
-
-          // Only update position if no collision would occur
-          if (!wouldCollide) {
-            const updatedElements = elements.map(el =>
-              el.id === elementId ? { ...el, x: newX, y: newY } : el
-            );
-            setElements(updatedElements);
-            saveToHistory(updatedElements);
-          }
-          // If there would be a collision, simply don't move the element
+          // Update position without collision detection during normal movement
+          const updatedElements = elements.map(el =>
+            el.id === elementId ? { ...el, x: newX, y: newY } : el
+          );
+          setElements(updatedElements);
+          saveToHistory(updatedElements);
         }
       }
     };
@@ -307,7 +276,7 @@ export default function Panel({
   return (
     <div
       id='panel-wrapper'
-      className='relative flex items-center justify-center'
+      className={`relative flex items-center justify-center ${isDragging ? 'dragging-active' : ''}`}
       style={{ width, height }}
       onClick={() => {
         setSelectedElement(null);
@@ -356,170 +325,132 @@ export default function Panel({
           border: '2px solid rgba(255,255,255,0.3)', // Clean border without glow for export
         }}
       >
-        {elements.map(el => (
-          <Rnd
-            key={el.id}
-            size={{ width: el.width, height: el.height }}
-            position={{ x: el.x, y: el.y }}
-            bounds='parent'
-            className='element-wrapper'
-            data-element-id={el.id}
-            onDragStart={(_e, _d) => {
-              setIsDragging(true);
-              setSelectedElement(el.id);
-            }}
-            onDrag={(e, d) => {
-              // Get the current element from state to ensure we have the latest dimensions
-              let currentElement = elements.find(elem => elem.id === el.id);
-              if (!currentElement) return;
+        {elements.map(el => {
+          // Ensure all required properties exist and are valid numbers
+          const safeElement = {
+            ...el,
+            width: typeof el.width === 'number' && !isNaN(el.width) ? el.width : 100,
+            height: typeof el.height === 'number' && !isNaN(el.height) ? el.height : 100,
+            x: typeof el.x === 'number' && !isNaN(el.x) ? el.x : 0,
+            y: typeof el.y === 'number' && !isNaN(el.y) ? el.y : 0,
+          };
 
-              // Get the actual current size from the DOM element in case state hasn't updated yet
-              const domElement = e.target.closest('.element-wrapper');
-              if (domElement) {
-                const computedStyle = window.getComputedStyle(domElement);
-                const currentWidth = parseInt(computedStyle.width);
-                const currentHeight = parseInt(computedStyle.height);
+          return (
+            <Rnd
+              key={safeElement.id}
+              size={{ width: safeElement.width, height: safeElement.height }}
+              position={{ x: safeElement.x, y: safeElement.y }}
+              bounds='parent'
+              className='element-wrapper'
+              data-element-id={safeElement.id}
+              onDragStart={(_e, _d) => {
+                setIsDragging(true);
+                setSelectedElement(el.id);
+              }}
+              onDrag={(e, d) => {
+                // Get the current element from state to ensure we have the latest dimensions
+                let currentElement = elements.find(elem => elem.id === safeElement.id);
+                if (!currentElement) return;
 
-                // Create an element object with the most current dimensions
-                currentElement = {
-                  ...currentElement,
-                  width: currentWidth,
-                  height: currentHeight,
-                };
-              }
+                // Get the actual current size from the DOM element in case state hasn't updated yet
+                const domElement = e.target.closest('.element-wrapper');
+                if (domElement) {
+                  const computedStyle = window.getComputedStyle(domElement);
+                  const currentWidth = parseInt(computedStyle.width);
+                  const currentHeight = parseInt(computedStyle.height);
 
-              // Apply snapping using the current element's updated dimensions
-              applySnapping(currentElement, d.x, d.y);
-
-              // Don't update element position during drag - let react-rnd handle it naturally
-              // This prevents the drift issue by keeping the element following the mouse cursor
-              // The snapping guides are shown via the applySnapping call above
-            }}
-            onDragStop={(_e, _d) => {
-              setIsDragging(false);
-
-              // Get the current element from state to ensure we have the latest dimensions
-              const currentElement = elements.find(elem => elem.id === el.id);
-              if (!currentElement) return;
-
-              const snapped = applySnapping(currentElement, _d.x, _d.y);
-
-              // Check for collisions with other elements
-              const wouldCollide = elements.some(otherEl => {
-                if (otherEl.id === currentElement.id) return false;
-
-                const thisRect = {
-                  left: snapped.x,
-                  right: snapped.x + currentElement.width,
-                  top: snapped.y,
-                  bottom: snapped.y + currentElement.height,
-                };
-
-                const otherRect = {
-                  left: otherEl.x,
-                  right: otherEl.x + otherEl.width,
-                  top: otherEl.y,
-                  bottom: otherEl.y + otherEl.height,
-                };
-
-                // Check for overlap with buffer
-                const buffer = 5;
-                return !(
-                  thisRect.right + buffer <= otherRect.left ||
-                  thisRect.left >= otherRect.right + buffer ||
-                  thisRect.bottom + buffer <= otherRect.top ||
-                  thisRect.top >= otherRect.bottom + buffer
-                );
-              });
-
-              if (wouldCollide) {
-                // If there would be a collision, find a nearby free space
-                const freeSpace = findNearbyFreeSpace(
-                  snapped.x,
-                  snapped.y,
-                  currentElement.width,
-                  currentElement.height,
-                  elements,
-                  width,
-                  height
-                );
-                if (freeSpace) {
-                  setElements(prev => {
-                    const updated = prev.map(x =>
-                      x.id === el.id ? { ...x, x: freeSpace.x, y: freeSpace.y } : x
-                    );
-                    saveToHistory(updated);
-                    return updated;
-                  });
+                  // Create an element object with the most current dimensions
+                  currentElement = {
+                    ...currentElement,
+                    width: currentWidth,
+                    height: currentHeight,
+                  };
                 }
-                // If no free space available, element stays in original position
-              } else {
-                // If no collision, update position
+
+                // Apply snapping using the current element's updated dimensions
+                applySnapping(currentElement, d.x, d.y);
+
+                // Don't update element position during drag - let react-rnd handle it naturally
+                // This prevents the drift issue by keeping the element following the mouse cursor
+                // The snapping guides are shown via the applySnapping call above
+              }}
+              onDragStop={(_e, _d) => {
+                setIsDragging(false);
+
+                // Get the current element from state to ensure we have the latest dimensions
+                const currentElement = elements.find(elem => elem.id === safeElement.id);
+                if (!currentElement) return;
+
+                const snapped = applySnapping(currentElement, _d.x, _d.y);
+
+                // Update position without collision detection during normal dragging
                 setElements(prev => {
-                  const updated = prev.map(x => (x.id === el.id ? { ...x, ...snapped } : x));
+                  const updated = prev.map(x =>
+                    x.id === safeElement.id ? { ...x, ...snapped } : x
+                  );
                   saveToHistory(updated);
                   return updated;
                 });
-              }
-              clearGuides();
-            }}
-            onResizeStop={(e, dir, ref, delta, pos) => {
-              const newWidth = +ref.style.width;
-              const newHeight = +ref.style.height;
+                clearGuides();
+              }}
+              onResizeStop={(e, dir, ref, delta, pos) => {
+                const newWidth = +ref.style.width;
+                const newHeight = +ref.style.height;
 
-              // Temporarily disable collision detection for resize to debug the issue
-              // TODO: Re-enable with proper collision detection once we identify the problem
+                // Temporarily disable collision detection for resize to debug the issue
+                // TODO: Re-enable with proper collision detection once we identify the problem
 
-              // Always update the element size
-              setElements(prev => {
-                const updated = prev.map(x =>
-                  x.id === el.id
-                    ? {
-                        ...x,
-                        x: pos.x,
-                        y: pos.y,
-                        width: newWidth,
-                        height: newHeight,
-                      }
-                    : x
-                );
-                saveToHistory(updated);
-                return updated;
-              });
-            }}
-            onClick={e => handleElementClick(e, el)}
-            onDoubleClick={e => handleElementClick(e, el)}
-            disableDragging={isEditing}
-            enableResizing={{
-              top: !isEditing,
-              right: !isEditing,
-              bottom: !isEditing,
-              left: !isEditing,
-              topRight: !isEditing,
-              bottomRight: !isEditing,
-              bottomLeft: !isEditing,
-              topLeft: !isEditing,
-            }}
-          >
-            <ElementRenderer
-              el={el}
-              glowColor={getCurrentGlowColor()}
-              isPowerOn={isPowerOn}
-              selected={selectedElement === el.id}
-              textareaRefs={textareaRefs}
-              setElements={setElements}
-              saveToHistory={saveToHistory}
-              deleteSelected={deleteSelected}
-              brightness={brightness}
-              glowMode={effectiveGlowMode}
-              currentTime={t}
-              isEditing={isEditing}
-              setIsEditing={setIsEditing}
-              textGlowIntensity={textGlowIntensity}
-              borderRadius={borderRadius}
-            />
-          </Rnd>
-        ))}
+                // Always update the element size
+                setElements(prev => {
+                  const updated = prev.map(x =>
+                    x.id === safeElement.id
+                      ? {
+                          ...x,
+                          x: pos.x,
+                          y: pos.y,
+                          width: newWidth,
+                          height: newHeight,
+                        }
+                      : x
+                  );
+                  saveToHistory(updated);
+                  return updated;
+                });
+              }}
+              onClick={e => handleElementClick(e, safeElement)}
+              onDoubleClick={e => handleElementClick(e, safeElement)}
+              disableDragging={isEditing}
+              enableResizing={{
+                top: !isEditing,
+                right: !isEditing,
+                bottom: !isEditing,
+                left: !isEditing,
+                topRight: !isEditing,
+                bottomRight: !isEditing,
+                bottomLeft: !isEditing,
+                topLeft: !isEditing,
+              }}
+            >
+              <ElementRenderer
+                el={safeElement}
+                glowColor={getCurrentGlowColor()}
+                isPowerOn={isPowerOn}
+                selected={selectedElement === safeElement.id}
+                textareaRefs={textareaRefs}
+                setElements={setElements}
+                saveToHistory={saveToHistory}
+                deleteSelected={deleteSelected}
+                brightness={brightness}
+                glowMode={effectiveGlowMode}
+                currentTime={t}
+                isEditing={isEditing}
+                setIsEditing={setIsEditing}
+                textGlowIntensity={textGlowIntensity}
+                borderRadius={borderRadius}
+              />
+            </Rnd>
+          );
+        })}
 
         <SnappingGuides guides={guides} />
         <DistanceIndicators indicators={distanceIndicators} />

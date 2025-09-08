@@ -127,6 +127,7 @@ export default function App() {
               setRoundedEdges={setRoundedEdges}
               saveToHistory={saveToHistory}
               isPowerOn={isPowerOn}
+              setIsPowerOn={setIsPowerOn}
               textGlowIntensity={textGlowIntensity}
               setTextGlowIntensity={setTextGlowIntensity}
               borderRadius={borderRadius}
@@ -176,6 +177,7 @@ export default function App() {
               setRoundedEdges={setRoundedEdges}
               saveToHistory={saveToHistory}
               isPowerOn={isPowerOn}
+              setIsPowerOn={setIsPowerOn}
               textGlowIntensity={textGlowIntensity}
               setTextGlowIntensity={setTextGlowIntensity}
               borderRadius={borderRadius}

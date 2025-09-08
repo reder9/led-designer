@@ -92,6 +92,15 @@ export default function useClipboard({
             id: Date.now() + Math.random(), // Ensure unique ID
             x: freeSpace.x,
             y: freeSpace.y,
+            // Ensure required properties exist and are valid
+            width:
+              typeof elementData.width === 'number' && !isNaN(elementData.width)
+                ? elementData.width
+                : 100,
+            height:
+              typeof elementData.height === 'number' && !isNaN(elementData.height)
+                ? elementData.height
+                : 100,
           };
 
           const updatedElements = [...elements, newElement];
@@ -139,6 +148,9 @@ export default function useClipboard({
           id: Date.now() + Math.random(),
           x: freeSpace.x,
           y: freeSpace.y,
+          // Ensure required properties exist and are valid
+          width: typeof el.width === 'number' && !isNaN(el.width) ? el.width : 100,
+          height: typeof el.height === 'number' && !isNaN(el.height) ? el.height : 100,
         };
 
         const updatedElements = [...elements, newElement];

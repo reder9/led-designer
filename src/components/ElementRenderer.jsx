@@ -24,12 +24,13 @@ function ElementRenderer({
   const elementOpacity = isPowerOn ? Math.max(0.1, Math.min(1, safeBrightness / 100)) : 0.3;
   const glowIntensity = Math.max(0, Math.min(1, safeBrightness / 100)) * 0.8;
 
-  // Apply reduction to glow intensity for text
-  const effectiveTextGlowIntensity = textGlowIntensity || glowIntensity * 0.5;
+  // Apply reduction to glow intensity for text - properly handle 0 value
+  const effectiveTextGlowIntensity =
+    textGlowIntensity !== undefined ? textGlowIntensity : glowIntensity * 0.5;
 
   // Calculate dynamic effects for text
   const getTextGlowEffect = () => {
-    if (!isPowerOn) return 'none';
+    if (!isPowerOn || effectiveTextGlowIntensity === 0) return 'none';
 
     switch (glowMode) {
       case 'rainbow': {
@@ -50,23 +51,23 @@ function ElementRenderer({
   };
 
   const getIconGlowEffect = () => {
-    if (!isPowerOn) return 'none';
+    if (!isPowerOn || effectiveTextGlowIntensity === 0) return 'none';
 
     switch (glowMode) {
       case 'rainbow': {
-        return `drop-shadow(0 0 ${10 * effectiveTextGlowIntensity}px currentColor) drop-shadow(0 0 ${20 * effectiveTextGlowIntensity}px currentColor)`;
+        return `drop-shadow(0 0 ${2.5 * effectiveTextGlowIntensity}px currentColor) drop-shadow(0 0 ${5 * effectiveTextGlowIntensity}px currentColor)`;
       }
 
       case 'breathing': {
         const breath = (Math.sin(currentTime * Math.PI) + 1) / 2;
-        return `drop-shadow(0 0 ${10 * effectiveTextGlowIntensity * breath}px ${glowColor}) drop-shadow(0 0 ${20 * effectiveTextGlowIntensity * breath}px ${glowColor})`;
+        return `drop-shadow(0 0 ${2.5 * effectiveTextGlowIntensity * breath}px ${glowColor}) drop-shadow(0 0 ${5 * effectiveTextGlowIntensity * breath}px ${glowColor})`;
       }
 
       case 'chase':
-        return `drop-shadow(0 0 ${10 * effectiveTextGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${20 * effectiveTextGlowIntensity}px ${glowColor})`;
+        return `drop-shadow(0 0 ${2.5 * effectiveTextGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${5 * effectiveTextGlowIntensity}px ${glowColor})`;
 
       default:
-        return `drop-shadow(0 0 ${8 * effectiveTextGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${15 * effectiveTextGlowIntensity}px ${glowColor})`;
+        return `drop-shadow(0 0 ${2 * effectiveTextGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${3.75 * effectiveTextGlowIntensity}px ${glowColor})`;
     }
   };
 
@@ -310,7 +311,9 @@ function ElementRenderer({
                 filter: isPowerOn
                   ? glowMode === 'rainbow'
                     ? 'invert(1)'
-                    : 'url(#coloredInvert)'
+                    : effectiveTextGlowIntensity === 0
+                      ? 'invert(1)' // Use invert(1) for clean white icons during export
+                      : 'url(#coloredInvert)'
                   : 'brightness(0.7)',
                 animation: glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none',
               }}
