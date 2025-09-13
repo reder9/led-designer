@@ -23,15 +23,3 @@
   z-index: 1000 !important;
   pointer-events: auto !important;
 }
-
-/* Show boundaries on all elements when something is being dragged */
-.dragging-active .element-wrapper {
-  border: 1px dashed rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
-}
-
-/* Highlight the currently dragged element differently */
-.dragging-active .react-draggable-dragging {
-  border: 2px solid rgba(0, 255, 255, 0.8) !important;
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.4) !important;
-}

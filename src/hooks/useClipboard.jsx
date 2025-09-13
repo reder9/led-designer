@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import { findNearbyFreeSpace } from '../utils/collision';
 
 export default function useClipboard({
   elements,
@@ -7,8 +6,6 @@ export default function useClipboard({
   selectedElement,
   setSelectedElement,
   saveToHistory,
-  panelWidth,
-  panelHeight,
 }) {
   const copy = useCallback(() => {
     if (selectedElement) {
@@ -22,13 +19,13 @@ export default function useClipboard({
         };
         navigator.clipboard.writeText(JSON.stringify(clipboardData));
 
-        // Visual feedback - subtle glow effect without changing element size/opacity
+        // Visual feedback
         const element = document.querySelector(`[data-element-id="${selectedElement}"]`);
         if (element) {
-          element.style.animation = 'copyFeedback 0.4s ease-out';
+          element.style.animation = 'flash 0.3s';
           setTimeout(() => {
             if (element) element.style.animation = '';
-          }, 400);
+          }, 300);
         }
       }
     }
@@ -67,40 +64,25 @@ export default function useClipboard({
           // Remove clipboard metadata
           const { _isClipboardElement, _sourceApp, ...elementData } = parsed;
 
-          // Calculate paste position with collision detection
-          const pasteX = x ?? elementData.x + 20;
-          const pasteY = y ?? elementData.y + 20;
+          // Calculate paste position
+          let pasteX = x ?? 50;
+          let pasteY = y ?? 50;
 
-          // Find a free space for the pasted element
-          const freeSpace = findNearbyFreeSpace(
-            pasteX,
-            pasteY,
-            elementData.width,
-            elementData.height,
-            elements,
-            panelWidth || 800,
-            panelHeight || 400
-          );
+          // If no specific position provided, paste near original or offset from existing elements
+          if (x === undefined || y === undefined) {
+            pasteX = elementData.x + 20;
+            pasteY = elementData.y + 20;
 
-          if (!freeSpace) {
-            console.warn('No free space available for paste operation');
-            return null;
+            // Make sure it doesn't go outside bounds
+            if (pasteX > 750) pasteX = 50;
+            if (pasteY > 350) pasteY = 50;
           }
 
           const newElement = {
             ...elementData,
             id: Date.now() + Math.random(), // Ensure unique ID
-            x: freeSpace.x,
-            y: freeSpace.y,
-            // Ensure required properties exist and are valid
-            width:
-              typeof elementData.width === 'number' && !isNaN(elementData.width)
-                ? elementData.width
-                : 100,
-            height:
-              typeof elementData.height === 'number' && !isNaN(elementData.height)
-                ? elementData.height
-                : 100,
+            x: pasteX,
+            y: pasteY,
           };
 
           const updatedElements = [...elements, newElement];
@@ -120,38 +102,23 @@ export default function useClipboard({
         console.warn('Clipboard paste failed:', err);
       }
     },
-    [elements, setElements, setSelectedElement, saveToHistory, panelWidth, panelHeight]
+    [elements, setElements, setSelectedElement, saveToHistory]
   );
 
   const duplicate = useCallback(() => {
     if (selectedElement) {
       const el = elements.find(e => e.id === selectedElement);
       if (el) {
-        // Find a free space for the duplicated element
-        const freeSpace = findNearbyFreeSpace(
-          el.x + 20,
-          el.y + 20,
-          el.width,
-          el.height,
-          elements,
-          panelWidth || 800,
-          panelHeight || 400
-        );
-
-        if (!freeSpace) {
-          console.warn('No free space available for duplicate operation');
-          return;
-        }
-
         const newElement = {
           ...el,
           id: Date.now() + Math.random(),
-          x: freeSpace.x,
-          y: freeSpace.y,
-          // Ensure required properties exist and are valid
-          width: typeof el.width === 'number' && !isNaN(el.width) ? el.width : 100,
-          height: typeof el.height === 'number' && !isNaN(el.height) ? el.height : 100,
+          x: el.x + 20,
+          y: el.y + 20,
         };
+
+        // Make sure it doesn't go outside bounds
+        if (newElement.x > 750) newElement.x = 50;
+        if (newElement.y > 350) newElement.y = 50;
 
         const updatedElements = [...elements, newElement];
         setElements(updatedElements);
@@ -159,15 +126,7 @@ export default function useClipboard({
         saveToHistory(updatedElements);
       }
     }
-  }, [
-    elements,
-    selectedElement,
-    setElements,
-    setSelectedElement,
-    saveToHistory,
-    panelWidth,
-    panelHeight,
-  ]);
+  }, [elements, selectedElement, setElements, setSelectedElement, saveToHistory]);
 
   return { copy, cut, paste, duplicate };
 }

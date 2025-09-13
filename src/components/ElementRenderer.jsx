@@ -1,6 +1,5 @@
 import { iconComponentMap } from '../utils/iconMap.jsx';
 import { useEffect, useRef } from 'react';
-import { measureTextWithMinimums } from '../utils/textMeasurement';
 
 function ElementRenderer({
   el,
@@ -24,34 +23,33 @@ function ElementRenderer({
   const elementOpacity = isPowerOn ? Math.max(0.1, Math.min(1, safeBrightness / 100)) : 0.3;
   const glowIntensity = Math.max(0, Math.min(1, safeBrightness / 100)) * 0.8;
 
-  // Apply reduction to glow intensity for text - properly handle 0 value
-  const effectiveTextGlowIntensity =
-    textGlowIntensity !== undefined ? textGlowIntensity : glowIntensity * 0.5;
+  // Apply reduction to glow intensity for text
+  const effectiveTextGlowIntensity = textGlowIntensity || glowIntensity * 0.5;
 
   // Calculate dynamic effects for text
   const getTextGlowEffect = () => {
-    if (!isPowerOn || effectiveTextGlowIntensity === 0) return 'none';
+    if (!isPowerOn) return 'none';
 
     switch (glowMode) {
       case 'rainbow': {
-        return `0 0 ${10 * effectiveTextGlowIntensity}px currentColor, 0 0 ${20 * effectiveTextGlowIntensity}px currentColor`;
+        return `0 0 ${2.5 * effectiveTextGlowIntensity}px currentColor, 0 0 ${5 * effectiveTextGlowIntensity}px currentColor`;
       }
 
       case 'breathing': {
         const breath = (Math.sin(currentTime * Math.PI) + 1) / 2;
-        return `0 0 ${10 * effectiveTextGlowIntensity * breath}px ${glowColor}, 0 0 ${20 * effectiveTextGlowIntensity * breath}px ${glowColor}`;
+        return `0 0 ${2.5 * effectiveTextGlowIntensity * breath}px ${glowColor}, 0 0 ${5 * effectiveTextGlowIntensity * breath}px ${glowColor}`;
       }
 
       case 'chase':
-        return `0 0 ${10 * effectiveTextGlowIntensity}px ${glowColor}, 0 0 ${20 * effectiveTextGlowIntensity}px ${glowColor}`;
+        return `0 0 ${2.5 * effectiveTextGlowIntensity}px ${glowColor}, 0 0 ${5 * effectiveTextGlowIntensity}px ${glowColor}`;
 
       default:
-        return `0 0 ${8 * effectiveTextGlowIntensity}px ${glowColor}, 0 0 ${15 * effectiveTextGlowIntensity}px ${glowColor}`;
+        return `0 0 ${2 * effectiveTextGlowIntensity}px ${glowColor}, 0 0 ${3.75 * effectiveTextGlowIntensity}px ${glowColor}`;
     }
   };
 
   const getIconGlowEffect = () => {
-    if (!isPowerOn || effectiveTextGlowIntensity === 0) return 'none';
+    if (!isPowerOn) return 'none';
 
     switch (glowMode) {
       case 'rainbow': {
@@ -106,30 +104,6 @@ function ElementRenderer({
       }
     }
   }, [isEditing, el.id, el.type, textareaRefs]);
-
-  // Helper function to safely parse hex color values
-  const parseHexColor = hexColor => {
-    // Ensure we have a valid hex color string
-    if (
-      !hexColor ||
-      typeof hexColor !== 'string' ||
-      !hexColor.startsWith('#') ||
-      hexColor.length !== 7
-    ) {
-      return { r: 0, g: 1, b: 1 }; // Default to cyan
-    }
-
-    const r = parseInt(hexColor.slice(1, 3), 16);
-    const g = parseInt(hexColor.slice(3, 5), 16);
-    const b = parseInt(hexColor.slice(5, 7), 16);
-
-    // Check for NaN and provide fallbacks
-    return {
-      r: isNaN(r) ? 0 : r / 255,
-      g: isNaN(g) ? 1 : g / 255,
-      b: isNaN(b) ? 1 : b / 255,
-    };
-  };
 
   if (el.type === 'text') {
     // Get text alignment class
@@ -205,30 +179,8 @@ function ElementRenderer({
         onChange={e => {
           // Update element content when text changes
           if (setElements) {
-            const newContent = e.target.value;
-
-            // Measure the new text dimensions
-            const newDimensions = measureTextWithMinimums(
-              newContent || 'Text', // Fallback text for empty content
-              el.fontSize || 16,
-              el.fontFamily || 'Arial',
-              el.fontWeight || 'normal',
-              el.fontStyle || 'normal',
-              40, // Minimum width
-              30 // Minimum height
-            );
-
             setElements(prev =>
-              prev.map(elem =>
-                elem.id === el.id
-                  ? {
-                      ...elem,
-                      content: newContent,
-                      width: newDimensions.width,
-                      height: newDimensions.height,
-                    }
-                  : elem
-              )
+              prev.map(elem => (elem.id === el.id ? { ...elem, content: e.target.value } : elem))
             );
           }
         }}
@@ -258,8 +210,6 @@ function ElementRenderer({
 
   if (el.type === 'icon' && el.iconKey && iconComponentMap[el.iconKey]) {
     const IconComp = iconComponentMap[el.iconKey];
-    const colorValues = parseHexColor(glowColor);
-
     return (
       <div
         className='w-full h-full flex items-center justify-center relative'
@@ -286,9 +236,18 @@ function ElementRenderer({
                   values='-1 0 0 0 1  0 -1 0 0 1  0 0 -1 0 1  0 0 0 1 0'
                 />
                 <feComponentTransfer>
-                  <feFuncR type='discrete' tableValues={`0 ${colorValues.r}`} />
-                  <feFuncG type='discrete' tableValues={`0 ${colorValues.g}`} />
-                  <feFuncB type='discrete' tableValues={`0 ${colorValues.b}`} />
+                  <feFuncR
+                    type='discrete'
+                    tableValues={`0 ${parseInt(glowColor.slice(1, 3), 16) / 255}`}
+                  />
+                  <feFuncG
+                    type='discrete'
+                    tableValues={`0 ${parseInt(glowColor.slice(3, 5), 16) / 255}`}
+                  />
+                  <feFuncB
+                    type='discrete'
+                    tableValues={`0 ${parseInt(glowColor.slice(5, 7), 16) / 255}`}
+                  />
                 </feComponentTransfer>
               </filter>
             </defs>
@@ -311,9 +270,7 @@ function ElementRenderer({
                 filter: isPowerOn
                   ? glowMode === 'rainbow'
                     ? 'invert(1)'
-                    : effectiveTextGlowIntensity === 0
-                      ? 'invert(1)' // Use invert(1) for clean white icons during export
-                      : 'url(#coloredInvert)'
+                    : 'url(#coloredInvert)'
                   : 'brightness(0.7)',
                 animation: glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none',
               }}
