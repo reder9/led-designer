@@ -32,19 +32,19 @@ function ElementRenderer({
 
     switch (glowMode) {
       case 'rainbow': {
-        return `0 0 ${2.5 * effectiveTextGlowIntensity}px currentColor, 0 0 ${5 * effectiveTextGlowIntensity}px currentColor`;
+        return `0 0 ${1.5 * effectiveTextGlowIntensity}px currentColor, 0 0 ${3 * effectiveTextGlowIntensity}px currentColor`;
       }
 
       case 'breathing': {
         const breath = (Math.sin(currentTime * Math.PI) + 1) / 2;
-        return `0 0 ${2.5 * effectiveTextGlowIntensity * breath}px ${glowColor}, 0 0 ${5 * effectiveTextGlowIntensity * breath}px ${glowColor}`;
+        return `0 0 ${1.5 * effectiveTextGlowIntensity * breath}px ${glowColor}, 0 0 ${3 * effectiveTextGlowIntensity * breath}px ${glowColor}`;
       }
 
       case 'chase':
-        return `0 0 ${2.5 * effectiveTextGlowIntensity}px ${glowColor}, 0 0 ${5 * effectiveTextGlowIntensity}px ${glowColor}`;
+        return `0 0 ${1.5 * effectiveTextGlowIntensity}px ${glowColor}, 0 0 ${3 * effectiveTextGlowIntensity}px ${glowColor}`;
 
       default:
-        return `0 0 ${2 * effectiveTextGlowIntensity}px ${glowColor}, 0 0 ${3.75 * effectiveTextGlowIntensity}px ${glowColor}`;
+        return `0 0 ${1.2 * effectiveTextGlowIntensity}px ${glowColor}, 0 0 ${2.25 * effectiveTextGlowIntensity}px ${glowColor}`;
     }
   };
 
@@ -53,19 +53,19 @@ function ElementRenderer({
 
     switch (glowMode) {
       case 'rainbow': {
-        return `drop-shadow(0 0 ${2.5 * effectiveTextGlowIntensity}px currentColor) drop-shadow(0 0 ${5 * effectiveTextGlowIntensity}px currentColor)`;
+        return `drop-shadow(0 0 ${1.5 * effectiveTextGlowIntensity}px currentColor) drop-shadow(0 0 ${3 * effectiveTextGlowIntensity}px currentColor)`;
       }
 
       case 'breathing': {
         const breath = (Math.sin(currentTime * Math.PI) + 1) / 2;
-        return `drop-shadow(0 0 ${2.5 * effectiveTextGlowIntensity * breath}px ${glowColor}) drop-shadow(0 0 ${5 * effectiveTextGlowIntensity * breath}px ${glowColor})`;
+        return `drop-shadow(0 0 ${1.5 * effectiveTextGlowIntensity * breath}px ${glowColor}) drop-shadow(0 0 ${3 * effectiveTextGlowIntensity * breath}px ${glowColor})`;
       }
 
       case 'chase':
-        return `drop-shadow(0 0 ${2.5 * effectiveTextGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${5 * effectiveTextGlowIntensity}px ${glowColor})`;
+        return `drop-shadow(0 0 ${1.5 * effectiveTextGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${3 * effectiveTextGlowIntensity}px ${glowColor})`;
 
       default:
-        return `drop-shadow(0 0 ${2 * effectiveTextGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${3.75 * effectiveTextGlowIntensity}px ${glowColor})`;
+        return `drop-shadow(0 0 ${1.2 * effectiveTextGlowIntensity}px ${glowColor}) drop-shadow(0 0 ${2.25 * effectiveTextGlowIntensity}px ${glowColor})`;
     }
   };
 

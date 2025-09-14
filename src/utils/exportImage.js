@@ -377,7 +377,6 @@ export const exportAsImage = async (
       #${elementId} svg {
         width: 100% !important;
         height: 100% !important;
-        viewBox: 0 0 24 24 !important;
         preserveAspectRatio: xMidYMid meet !important;
       }
       

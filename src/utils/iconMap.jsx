@@ -26,15 +26,18 @@ const getIconName = path => {
 const createSVGComponent = (svgContent, _iconName) => {
   return function SVGComponent(props) {
     // Ensure proper SVG attributes for scaling and aspect ratio preservation
-    const processedSVG = svgContent
+    let processedSVG = svgContent
       .replace(
         '<svg',
         `<svg width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="max-width: 100%; max-height: 100%; display: block; overflow: visible;"`
       )
       .replace(/width="[^"]*"/g, '') // Remove original width
-      .replace(/height="[^"]*"/g, '') // Remove original height
-      .replace(/viewBox="[^"]*"/g, '') // Remove existing viewBox to avoid conflicts
-      .replace('<svg', '<svg viewBox="0 0 24 24"'); // Add consistent viewBox
+      .replace(/height="[^"]*"/g, ''); // Remove original height
+
+    // Only add a default viewBox if one doesn't exist
+    if (!processedSVG.includes('viewBox=')) {
+      processedSVG = processedSVG.replace('<svg', '<svg viewBox="0 0 24 24"');
+    }
 
     return (
       <div
