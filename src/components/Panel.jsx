@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { Rnd } from 'react-rnd';
+import Moveable from 'react-moveable';
 import useHistory from '../hooks/useHistory';
 import useClipboard from '../hooks/useClipboard';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
@@ -28,7 +28,6 @@ export default function Panel({
   textGlowIntensity = 1.0,
 }) {
   const textareaRefs = useRef({});
-  const [_isDragging, setIsDragging] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -36,7 +35,7 @@ export default function Panel({
   const effectiveGlowMode = glowMode || 'rainbow';
 
   // Helper function to find nearby free space when collision occurs
-  const findNearbyFreeSpace = (preferredX, preferredY, elementWidth, elementHeight) => {
+  const _findNearbyFreeSpace = (preferredX, preferredY, elementWidth, elementHeight) => {
     const gridSize = 20;
     const panelWidth = width;
     const panelHeight = height;
@@ -145,6 +144,17 @@ export default function Panel({
     saveToHistory,
   });
 
+  // Snapping functionality
+  const [guides, setGuides] = useState([]);
+  const [_distanceIndicators, setDistanceIndicators] = useState([]);
+  const { applySnapping: _applySnapping, clearGuides: _clearGuides } = useSnapping({
+    elements,
+    width,
+    height,
+    setGuides,
+    setDistanceIndicators,
+  });
+
   // Delete functionality
   const deleteSelected = () => {
     if (selectedElement) {
@@ -225,17 +235,29 @@ export default function Panel({
     return () => window.removeEventListener('moveElement', handleMoveElement);
   }, [elements, selectedElement, width, height, setElements, saveToHistory]);
 
-  // Snapping
-  const [guides, setGuides] = useState([]);
-  const [distanceIndicators, setDistanceIndicators] = useState([]);
+  // React-moveable state
+  const [isDragging, setIsDragging] = useState(false);
+  const moveableRefs = useRef({});
 
-  const { applySnapping, clearGuides } = useSnapping({
-    elements,
-    width,
-    height,
-    setGuides,
-    setDistanceIndicators,
-  });
+  // Generate snapping guidelines for react-moveable
+  const getSnapGuides = () => {
+    const horizontalGuides = [
+      height / 3, // Third
+      height / 2, // Half/Center
+      (2 * height) / 3, // Two thirds
+    ];
+
+    const verticalGuides = [
+      width / 3, // Third
+      width / 2, // Half/Center
+      (2 * width) / 3, // Two thirds
+    ];
+
+    return {
+      horizontal: horizontalGuides,
+      vertical: verticalGuides,
+    };
+  };
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -449,173 +471,24 @@ export default function Panel({
         }}
       >
         {elements.map(el => (
-          <Rnd
+          <div
             key={el.id}
-            size={{ width: el.width, height: el.height }}
-            position={{ x: el.x, y: el.y }}
-            bounds='parent'
+            ref={ref => {
+              if (ref) {
+                moveableRefs.current[el.id] = ref;
+              }
+            }}
             className='element-wrapper'
             data-element-id={el.id}
-            onDragStart={(_e, _d) => {
-              setIsDragging(true);
-              setSelectedElement(el.id);
-            }}
-            onDrag={(e, d) => {
-              const snapped = applySnapping(el, d.x, d.y);
-
-              // Check for collisions with other elements during drag
-              const wouldCollide = elements.some(otherEl => {
-                if (otherEl.id === el.id) return false;
-
-                const thisRect = {
-                  left: snapped.x,
-                  right: snapped.x + el.width,
-                  top: snapped.y,
-                  bottom: snapped.y + el.height,
-                };
-
-                const otherRect = {
-                  left: otherEl.x,
-                  right: otherEl.x + otherEl.width,
-                  top: otherEl.y,
-                  bottom: otherEl.y + otherEl.height,
-                };
-
-                // Check for overlap with a small buffer to prevent touching
-                const buffer = 5;
-                return !(
-                  thisRect.right + buffer <= otherRect.left ||
-                  thisRect.left >= otherRect.right + buffer ||
-                  thisRect.bottom + buffer <= otherRect.top ||
-                  thisRect.top >= otherRect.bottom + buffer
-                );
-              });
-
-              // Only update position if no collision
-              if (!wouldCollide) {
-                setElements(prev =>
-                  prev.map(x => (x.id === el.id ? { ...x, x: snapped.x, y: snapped.y } : x))
-                );
-              }
-            }}
-            onDragStop={(_e, _d) => {
-              setIsDragging(false);
-              const snapped = applySnapping(el, _d.x, _d.y);
-
-              // Check for collisions with other elements
-              const wouldCollide = elements.some(otherEl => {
-                if (otherEl.id === el.id) return false;
-
-                const thisRect = {
-                  left: snapped.x,
-                  right: snapped.x + el.width,
-                  top: snapped.y,
-                  bottom: snapped.y + el.height,
-                };
-
-                const otherRect = {
-                  left: otherEl.x,
-                  right: otherEl.x + otherEl.width,
-                  top: otherEl.y,
-                  bottom: otherEl.y + otherEl.height,
-                };
-
-                // Check for overlap with buffer
-                const buffer = 5;
-                return !(
-                  thisRect.right + buffer <= otherRect.left ||
-                  thisRect.left >= otherRect.right + buffer ||
-                  thisRect.bottom + buffer <= otherRect.top ||
-                  thisRect.top >= otherRect.bottom + buffer
-                );
-              });
-
-              if (wouldCollide) {
-                // If there would be a collision, find a nearby free space
-                const freeSpace = findNearbyFreeSpace(snapped.x, snapped.y, el.width, el.height);
-                if (freeSpace) {
-                  setElements(prev => {
-                    const updated = prev.map(x =>
-                      x.id === el.id ? { ...x, x: freeSpace.x, y: freeSpace.y } : x
-                    );
-                    saveToHistory(updated);
-                    return updated;
-                  });
-                }
-                // If no free space available, element stays in original position
-              } else {
-                // If no collision, update position
-                setElements(prev => {
-                  const updated = prev.map(x => (x.id === el.id ? { ...x, ...snapped } : x));
-                  saveToHistory(updated);
-                  return updated;
-                });
-              }
-              clearGuides();
-            }}
-            onResizeStop={(e, dir, ref, delta, pos) => {
-              // Check if the new size/position would cause collision
-              const wouldCollide = elements.some(otherEl => {
-                if (otherEl.id === el.id) return false;
-
-                const thisRect = {
-                  left: pos.x,
-                  right: pos.x + parseInt(ref.style.width),
-                  top: pos.y,
-                  bottom: pos.y + parseInt(ref.style.height),
-                };
-
-                const otherRect = {
-                  left: otherEl.x,
-                  right: otherEl.x + otherEl.width,
-                  top: otherEl.y,
-                  bottom: otherEl.y + otherEl.height,
-                };
-
-                // Check for overlap with buffer
-                const buffer = 5;
-                return !(
-                  thisRect.right + buffer <= otherRect.left ||
-                  thisRect.left >= otherRect.right + buffer ||
-                  thisRect.bottom + buffer <= otherRect.top ||
-                  thisRect.top >= otherRect.bottom + buffer
-                );
-              });
-
-              if (wouldCollide) {
-                // If there would be a collision, revert to original size/position
-                setElements(prev => [...prev]);
-              } else {
-                // If no collision, update size and position
-                setElements(prev => {
-                  const updated = prev.map(x =>
-                    x.id === el.id
-                      ? {
-                          ...x,
-                          x: pos.x,
-                          y: pos.y,
-                          width: +ref.style.width,
-                          height: +ref.style.height,
-                        }
-                      : x
-                  );
-                  saveToHistory(updated);
-                  return updated;
-                });
-              }
-            }}
             onClick={e => handleElementClick(e, el)}
             onDoubleClick={e => handleElementClick(e, el)}
-            disableDragging={isEditing}
-            enableResizing={{
-              top: !isEditing,
-              right: !isEditing,
-              bottom: !isEditing,
-              left: !isEditing,
-              topRight: !isEditing,
-              bottomRight: !isEditing,
-              bottomLeft: !isEditing,
-              topLeft: !isEditing,
+            style={{
+              position: 'absolute',
+              left: el.x,
+              top: el.y,
+              width: el.width,
+              height: el.height,
+              cursor: selectedElement === el.id ? 'move' : 'pointer',
             }}
           >
             <ElementRenderer
@@ -635,15 +508,98 @@ export default function Panel({
               textGlowIntensity={textGlowIntensity}
               borderRadius={borderRadius}
             />
-          </Rnd>
+          </div>
         ))}
 
         {/* Show static guides when not dragging */}
-        <StaticGuides width={width} height={height} showGuides={!_isDragging} />
+        <StaticGuides width={width} height={height} showGuides={!isDragging} />
 
         {/* Active snapping guides when dragging */}
         <SnappingGuides guides={guides} />
-        <DistanceIndicators indicators={distanceIndicators} />
+
+        {/* React-moveable controller */}
+        {selectedElement && moveableRefs.current[selectedElement] && (
+          <Moveable
+            target={moveableRefs.current[selectedElement]}
+            container={null}
+            origin={false}
+            /* Draggable */
+            draggable={!isEditing}
+            throttleDrag={1}
+            onDragStart={() => {
+              setIsDragging(true);
+            }}
+            onDrag={({ target, left, top }) => {
+              target.style.left = `${left}px`;
+              target.style.top = `${top}px`;
+
+              // Update element position in state
+              setElements(prev =>
+                prev.map(el => (el.id === selectedElement ? { ...el, x: left, y: top } : el))
+              );
+            }}
+            onDragEnd={({ target }) => {
+              setIsDragging(false);
+              const left = parseInt(target.style.left);
+              const top = parseInt(target.style.top);
+
+              // Save to history
+              setElements(prev => {
+                const updated = prev.map(el =>
+                  el.id === selectedElement ? { ...el, x: left, y: top } : el
+                );
+                saveToHistory(updated);
+                return updated;
+              });
+            }}
+            /* Resizable */
+            resizable={true}
+            throttleResize={1}
+            onResizeStart={() => {
+              setIsDragging(true);
+            }}
+            onResize={({ target, width, height, left, top }) => {
+              target.style.width = `${width}px`;
+              target.style.height = `${height}px`;
+              target.style.left = `${left}px`;
+              target.style.top = `${top}px`;
+            }}
+            onResizeEnd={({ target }) => {
+              setIsDragging(false);
+              const newWidth = parseInt(target.style.width);
+              const newHeight = parseInt(target.style.height);
+              const left = parseInt(target.style.left);
+              const top = parseInt(target.style.top);
+
+              // Save to history
+              setElements(prev => {
+                const updated = prev.map(el =>
+                  el.id === selectedElement
+                    ? { ...el, x: left, y: top, width: newWidth, height: newHeight }
+                    : el
+                );
+                saveToHistory(updated);
+                return updated;
+              });
+            }}
+            /* Snappable */
+            snappable={true}
+            snapThreshold={15}
+            horizontalGuidelines={getSnapGuides().horizontal}
+            verticalGuidelines={getSnapGuides().vertical}
+            elementGuidelines={elements
+              .filter(el => el.id !== selectedElement)
+              .map(el => ({
+                element: moveableRefs.current[el.id],
+                className: 'element-guideline',
+              }))
+              .filter(guide => guide.element)}
+            /* Bounds */
+            bounds={{ left: 0, top: 0, right: width, bottom: height }}
+            /* Styling */
+            renderDirections={['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se']}
+          />
+        )}
       </div>
     </div>
   );
