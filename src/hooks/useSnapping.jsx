@@ -15,7 +15,7 @@ export default function useSnapping({ elements, width, height, setGuides, setDis
   // Apply snapping logic
   const applySnapping = useCallback(
     (el, x, y) => {
-      const snapTolerance = 10;
+      const snapTolerance = 15; // Increased tolerance for better UX
       const gridSize = 20; // Grid size for snapping
       const guides = [];
       const distanceIndicators = [];
@@ -23,20 +23,44 @@ export default function useSnapping({ elements, width, height, setGuides, setDis
       // --- Grid snapping ---
       const snapToGrid = value => Math.round(value / gridSize) * gridSize;
 
-      // --- Panel center snap lines ---
-      const panelCenterX = width / 2 - el.width / 2;
-      const panelCenterY = height / 2 - el.height / 2;
+      // --- Panel division snap lines ---
+      // Horizontal divisions (vertical lines)
+      const panelHalfX = width / 2 - el.width / 2; // Center
+      const panelThirdX = width / 3 - el.width / 2; // Left third
+      const panelTwoThirdX = (2 * width) / 3 - el.width / 2; // Right third
 
-      // Check center snapping first
-      if (Math.abs(x - panelCenterX) < snapTolerance) {
-        x = panelCenterX;
-        guides.push({ orientation: 'vertical', position: width / 2 });
-      }
+      // Vertical divisions (horizontal lines)
+      const panelHalfY = height / 2 - el.height / 2; // Center
+      const panelThirdY = height / 3 - el.height / 2; // Top third
+      const panelTwoThirdY = (2 * height) / 3 - el.height / 2; // Bottom third
 
-      if (Math.abs(y - panelCenterY) < snapTolerance) {
-        y = panelCenterY;
-        guides.push({ orientation: 'horizontal', position: height / 2 });
-      }
+      // Check horizontal division snapping (creates vertical guides)
+      const horizontalDivisions = [
+        { pos: panelHalfX, guideLine: width / 2, name: 'center' },
+        { pos: panelThirdX, guideLine: width / 3, name: 'third' },
+        { pos: panelTwoThirdX, guideLine: (2 * width) / 3, name: 'two-third' },
+      ];
+
+      horizontalDivisions.forEach(({ pos, guideLine }) => {
+        if (Math.abs(x - pos) < snapTolerance) {
+          x = pos;
+          guides.push({ orientation: 'vertical', position: guideLine });
+        }
+      });
+
+      // Check vertical division snapping (creates horizontal guides)
+      const verticalDivisions = [
+        { pos: panelHalfY, guideLine: height / 2, name: 'center' },
+        { pos: panelThirdY, guideLine: height / 3, name: 'third' },
+        { pos: panelTwoThirdY, guideLine: (2 * height) / 3, name: 'two-third' },
+      ];
+
+      verticalDivisions.forEach(({ pos, guideLine }) => {
+        if (Math.abs(y - pos) < snapTolerance) {
+          y = pos;
+          guides.push({ orientation: 'horizontal', position: guideLine });
+        }
+      });
 
       // --- Snap relative to other elements ---
       elements.forEach(other => {

@@ -7,6 +7,7 @@ import useSnapping from '../hooks/useSnapping';
 import './Panel.css';
 import ElementRenderer from './ElementRenderer';
 import SnappingGuides from './SnappingGuides';
+import StaticGuides from './StaticGuides';
 import DistanceIndicators from './DistanceIndicators';
 
 export default function Panel({
@@ -227,6 +228,7 @@ export default function Panel({
   // Snapping
   const [guides, setGuides] = useState([]);
   const [distanceIndicators, setDistanceIndicators] = useState([]);
+
   const { applySnapping, clearGuides } = useSnapping({
     elements,
     width,
@@ -636,6 +638,10 @@ export default function Panel({
           </Rnd>
         ))}
 
+        {/* Show static guides when not dragging */}
+        <StaticGuides width={width} height={height} showGuides={!_isDragging} />
+
+        {/* Active snapping guides when dragging */}
         <SnappingGuides guides={guides} />
         <DistanceIndicators indicators={distanceIndicators} />
       </div>
