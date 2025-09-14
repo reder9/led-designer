@@ -105,7 +105,7 @@ export const exportAsImage = async (
 
     // Step 2.5: Disable all SVG filter definitions to prevent any glow effects
     const allSVGFilters = panel.querySelectorAll(
-      'svg defs, svg filter, feGaussianBlur, feComponentTransfer, feFuncR, feFuncG, feFuncB'
+      'svg defs, svg filter, feGaussianBlur, feComponentTransfer, feFuncR, feFuncG, feFuncB, feColorMatrix, filter[id*="colored"], filter[id*="invert"]'
     );
     allSVGFilters.forEach((filterElement, index) => {
       savedFilterStyles[index] = {
@@ -225,8 +225,11 @@ export const exportAsImage = async (
         // Remove all filters and effects from the icon container and its children
         iconContainer.style.setProperty('filter', 'none', 'important');
         iconContainer.style.setProperty('box-shadow', 'none', 'important');
+        iconContainer.style.setProperty('border', 'none', 'important');
+        iconContainer.style.setProperty('opacity', '1', 'important');
+        iconContainer.style.setProperty('visibility', 'visible', 'important');
 
-        // Force all child elements to cyan with no effects
+        // Force all child elements to cyan with no effects - be more specific about targeting
         const allChildren = iconContainer.querySelectorAll('*');
         allChildren.forEach(child => {
           if (child.style) {
@@ -237,20 +240,64 @@ export const exportAsImage = async (
             child.style.setProperty('box-shadow', 'none', 'important');
             child.style.setProperty('text-shadow', 'none', 'important');
             child.style.setProperty('transform', 'none', 'important');
+            child.style.setProperty('opacity', '1', 'important');
+            child.style.setProperty('visibility', 'visible', 'important');
+            child.style.setProperty('display', 'block', 'important');
+
+            // Ensure proper sizing for SVG elements
+            if (child.tagName && child.tagName.toLowerCase() === 'svg') {
+              child.style.setProperty('width', '100%', 'important');
+              child.style.setProperty('height', '100%', 'important');
+              child.style.setProperty('max-width', 'none', 'important');
+              child.style.setProperty('max-height', 'none', 'important');
+              child.style.setProperty('overflow', 'visible', 'important');
+            }
           }
+
+          // Set SVG attributes more aggressively
           if (
             child.setAttribute &&
             (child.tagName === 'svg' ||
+              child.tagName === 'SVG' ||
               child.tagName === 'path' ||
+              child.tagName === 'PATH' ||
               child.tagName === 'circle' ||
+              child.tagName === 'CIRCLE' ||
               child.tagName === 'rect' ||
+              child.tagName === 'RECT' ||
               child.tagName === 'g' ||
+              child.tagName === 'G' ||
               child.tagName === 'polygon' ||
+              child.tagName === 'POLYGON' ||
               child.tagName === 'line' ||
-              child.tagName === 'ellipse')
+              child.tagName === 'LINE' ||
+              child.tagName === 'ellipse' ||
+              child.tagName === 'ELLIPSE')
           ) {
             child.setAttribute('fill', '#00ffff');
-            child.setAttribute('stroke', '#00ffff');
+            if (child.hasAttribute('stroke')) {
+              child.setAttribute('stroke', '#00ffff');
+            }
+
+            // For SVG elements, ensure proper viewBox and sizing
+            if (child.tagName === 'svg' || child.tagName === 'SVG') {
+              child.setAttribute('width', '100%');
+              child.setAttribute('height', '100%');
+              child.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+              if (!child.hasAttribute('viewBox')) {
+                child.setAttribute('viewBox', '0 0 24 24');
+              }
+            }
+          }
+        });
+
+        // Also find and disable any SVG filter definitions within this icon
+        const filterDefs = iconContainer.querySelectorAll(
+          'defs, filter, feColorMatrix, feComponentTransfer, feFuncR, feFuncG, feFuncB'
+        );
+        filterDefs.forEach(filterEl => {
+          if (filterEl.style) {
+            filterEl.style.setProperty('display', 'none', 'important');
           }
         });
       }
@@ -298,6 +345,8 @@ export const exportAsImage = async (
         drop-shadow: none !important;
         transform: none !important;
         animation: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
       }
       
       /* Remove all glow effects from element wrappers */
@@ -309,7 +358,7 @@ export const exportAsImage = async (
         background: transparent !important;
       }
       
-      /* Force visibility for all icon-related elements */
+      /* Force visibility and proper sizing for all icon-related elements */
       #${elementId} [data-element-type="icon"],
       #${elementId} [data-element-type="icon"] > div,
       #${elementId} [data-element-type="icon"] svg,
@@ -317,12 +366,46 @@ export const exportAsImage = async (
         opacity: 1 !important;
         visibility: visible !important;
         display: block !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      
+      /* Ensure proper SVG scaling and prevent clipping */
+      #${elementId} svg {
+        width: 100% !important;
+        height: 100% !important;
+        viewBox: 0 0 24 24 !important;
+        preserveAspectRatio: xMidYMid meet !important;
       }
       
       /* Remove any SVG filters specifically */
       #${elementId} svg defs,
-      #${elementId} svg filter {
+      #${elementId} svg filter,
+      #${elementId} feColorMatrix,
+      #${elementId} feComponentTransfer,
+      #${elementId} feFuncR,
+      #${elementId} feFuncG,
+      #${elementId} feFuncB {
         display: none !important;
+      }
+      
+      /* Force icon containers to be properly sized and visible */
+      #${elementId} [data-element-type="icon"] > div:first-child {
+        width: 100% !important;
+        height: 100% !important;
+        position: static !important;
+        overflow: visible !important;
+      }
+      
+      /* Ensure icon wrapper divs don't interfere */
+      #${elementId} [data-element-type="icon"] div {
+        background: transparent !important;
+        border: none !important;
+        outline: none !important;
+        overflow: visible !important;
       }
     `;
     document.head.appendChild(style);
