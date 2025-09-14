@@ -53,14 +53,6 @@ export default function KeyboardShortcutsHelp() {
         { keys: ['Shift', '+ Arrow'], action: 'Move selected element by 10px' },
       ],
     },
-    {
-      category: 'Layers',
-      items: [
-        { keys: ['Ctrl', ']'], action: 'Bring element to front' },
-        { keys: ['Ctrl', '['], action: 'Send element to back' },
-      ],
-    },
-    { category: 'Context Menu', items: [{ keys: ['Right Click'], action: 'Open context menu' }] },
   ];
 
   if (!isVisible) {
@@ -164,12 +156,10 @@ export default function KeyboardShortcutsHelp() {
               Pro Tips
             </h4>
             <div className='text-gray-300 text-sm space-y-1'>
-              <p>• Right-click on elements or empty space for context menus</p>
               <p>• Use Shift + Arrow keys for faster movement</p>
               <p>• Press Enter while editing text to create new lines</p>
               <p>• Press Shift + Enter to finish editing text</p>
               <p>• Press F1 or Ctrl+/ to open this help anytime</p>
-              <p>• Context menus show available actions for the current selection</p>
             </div>
           </div>
         </div>

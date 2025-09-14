@@ -1,11 +1,10 @@
-import { Rnd } from 'react-rnd';
 import { useRef, useState, useEffect } from 'react';
+import { Rnd } from 'react-rnd';
 import useHistory from '../hooks/useHistory';
 import useClipboard from '../hooks/useClipboard';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import useSnapping from '../hooks/useSnapping';
 import './Panel.css';
-import { createContextMenu } from '../utils/contextMenu';
 import ElementRenderer from './ElementRenderer';
 import SnappingGuides from './SnappingGuides';
 import DistanceIndicators from './DistanceIndicators';
@@ -155,39 +154,6 @@ export default function Panel({
     }
   };
 
-  // Layer management
-  const bringToFront = () => {
-    if (selectedElement) {
-      const elementIndex = elements.findIndex(el => el.id === selectedElement);
-      if (elementIndex !== -1 && elementIndex !== elements.length - 1) {
-        const element = elements[elementIndex];
-        const newElements = [
-          ...elements.slice(0, elementIndex),
-          ...elements.slice(elementIndex + 1),
-          element,
-        ];
-        setElements(newElements);
-        saveToHistory(newElements);
-      }
-    }
-  };
-
-  const sendToBack = () => {
-    if (selectedElement) {
-      const elementIndex = elements.findIndex(el => el.id === selectedElement);
-      if (elementIndex !== -1 && elementIndex !== 0) {
-        const element = elements[elementIndex];
-        const newElements = [
-          element,
-          ...elements.slice(0, elementIndex),
-          ...elements.slice(elementIndex + 1),
-        ];
-        setElements(newElements);
-        saveToHistory(newElements);
-      }
-    }
-  };
-
   // Element movement
   useEffect(() => {
     const handleMoveElement = e => {
@@ -282,36 +248,7 @@ export default function Panel({
     isEditing,
     setIsEditing,
     setSelectedElement,
-    bringToFront,
-    sendToBack,
   });
-
-  const handleContextMenu = (e, id) => {
-    e.preventDefault();
-    setSelectedElement(id);
-
-    createContextMenu(e.pageX, e.pageY, {
-      onCopy: copy,
-      onCut: cut,
-      onPaste: () => paste(e.offsetX, e.offsetY),
-      onDuplicate: duplicate,
-      onDelete: deleteSelected,
-      onBringToFront: bringToFront,
-      onSendToBack: sendToBack,
-      hasSelectedElement: !!selectedElement,
-      canPaste: true,
-    });
-  };
-
-  const handlePanelContextMenu = e => {
-    e.preventDefault();
-
-    createContextMenu(e.pageX, e.pageY, {
-      onPaste: () => paste(e.nativeEvent.offsetX, e.nativeEvent.offsetY),
-      hasSelectedElement: false,
-      canPaste: true,
-    });
-  };
 
   const handleElementClick = (e, el) => {
     e.stopPropagation();
@@ -466,7 +403,6 @@ export default function Panel({
         setSelectedElement(null);
         setIsEditing(false);
       }}
-      onContextMenu={handlePanelContextMenu}
     >
       {/* Smooth, colorful LED-style glow border */}
       {showLedBorder && isPowerOn && (
@@ -668,7 +604,6 @@ export default function Panel({
             }}
             onClick={e => handleElementClick(e, el)}
             onDoubleClick={e => handleElementClick(e, el)}
-            onContextMenu={e => handleContextMenu(e, el.id)}
             disableDragging={isEditing}
             enableResizing={{
               top: !isEditing,

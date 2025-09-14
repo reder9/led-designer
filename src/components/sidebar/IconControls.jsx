@@ -6,8 +6,8 @@ function IconControls({
   _setElements,
   _activeIconCategory,
   _setActiveIconCategory,
-  _selectedElement,
-  _selectedElement2,
+  updateIconContent,
+  selectedElement,
   _saveToHistory,
 }) {
   const categories = [
@@ -16,9 +16,11 @@ function IconControls({
     { name: 'Sports', emoji: '⚽', key: 'sports' },
   ];
 
-  const updateIconContent = iconName => {
-    // TODO: Implement icon update functionality
-    console.warn('updateIconContent not implemented:', iconName);
+  // Use the updateIconContent function passed from parent
+  const handleIconClick = iconName => {
+    if (updateIconContent && selectedElement) {
+      updateIconContent(iconName);
+    }
   };
 
   return (
@@ -40,7 +42,7 @@ function IconControls({
                 {Object.entries(iconsByCategory[category.key] || {}).map(([iconName, iconUrl]) => (
                   <button
                     key={iconName}
-                    onClick={() => updateIconContent(iconName)}
+                    onClick={() => handleIconClick(iconName)}
                     className='p-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors group relative'
                     title={iconName.replace(/-/g, ' ').replace(/(^|\s)\S/g, l => l.toUpperCase())}
                   >

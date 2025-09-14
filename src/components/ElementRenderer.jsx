@@ -208,11 +208,22 @@ function ElementRenderer({
     );
   }
 
+  // Helper function to safely parse color values
+  const parseColorValue = (colorStr, startIndex, length) => {
+    if (!colorStr || typeof colorStr !== 'string' || !colorStr.startsWith('#')) {
+      return 0; // Default to 0 if color is invalid
+    }
+    const value = parseInt(colorStr.slice(startIndex, startIndex + length), 16);
+    return isNaN(value) ? 0 : value / 255;
+  };
+
   if (el.type === 'icon' && el.iconKey && iconComponentMap[el.iconKey]) {
     const IconComp = iconComponentMap[el.iconKey];
     return (
       <div
         className='w-full h-full flex items-center justify-center relative'
+        data-element-type='icon'
+        data-icon-key={el.iconKey}
         style={{
           backgroundColor: 'transparent',
           opacity: elementOpacity,
@@ -236,18 +247,9 @@ function ElementRenderer({
                   values='-1 0 0 0 1  0 -1 0 0 1  0 0 -1 0 1  0 0 0 1 0'
                 />
                 <feComponentTransfer>
-                  <feFuncR
-                    type='discrete'
-                    tableValues={`0 ${parseInt(glowColor.slice(1, 3), 16) / 255}`}
-                  />
-                  <feFuncG
-                    type='discrete'
-                    tableValues={`0 ${parseInt(glowColor.slice(3, 5), 16) / 255}`}
-                  />
-                  <feFuncB
-                    type='discrete'
-                    tableValues={`0 ${parseInt(glowColor.slice(5, 7), 16) / 255}`}
-                  />
+                  <feFuncR type='discrete' tableValues={`0 ${parseColorValue(glowColor, 1, 2)}`} />
+                  <feFuncG type='discrete' tableValues={`0 ${parseColorValue(glowColor, 3, 2)}`} />
+                  <feFuncB type='discrete' tableValues={`0 ${parseColorValue(glowColor, 5, 2)}`} />
                 </feComponentTransfer>
               </filter>
             </defs>
