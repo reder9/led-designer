@@ -1,9 +1,10 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import Moveable from 'react-moveable';
 import useHistory from '../hooks/useHistory';
 import useClipboard from '../hooks/useClipboard';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import useSnapping from '../hooks/useSnapping';
+import useCollisionPrevention from '../hooks/useCollisionPrevention';
 import './Panel.css';
 import ElementRenderer from './ElementRenderer';
 import SnappingGuides from './SnappingGuides';
@@ -154,6 +155,32 @@ export default function Panel({
     setGuides,
     setDistanceIndicators,
   });
+
+  // Collision prevention functionality
+  const { getSafePosition, getSafeResize, validateAndCorrectPositions } = useCollisionPrevention(
+    elements,
+    width,
+    height
+  );
+
+  // Function to fix all overlapping elements
+  const fixOverlaps = useCallback(() => {
+    const correctedElements = validateAndCorrectPositions(elements);
+    if (JSON.stringify(correctedElements) !== JSON.stringify(elements)) {
+      setElements(correctedElements);
+      saveToHistory(correctedElements);
+    }
+  }, [elements, validateAndCorrectPositions, setElements, saveToHistory]);
+
+  // Auto-fix overlaps on mount (useful for imported layouts)
+  useEffect(() => {
+    if (elements.length > 1) {
+      const timer = setTimeout(() => {
+        fixOverlaps();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [elements.length, fixOverlaps]);
 
   // Delete functionality
   const deleteSelected = () => {
@@ -530,13 +557,28 @@ export default function Panel({
               setIsDragging(true);
             }}
             onDrag={({ target, left, top }) => {
-              target.style.left = `${left}px`;
-              target.style.top = `${top}px`;
+              const selectedEl = elements.find(el => el.id === selectedElement);
+              if (!selectedEl) return;
 
-              // Update element position in state
-              setElements(prev =>
-                prev.map(el => (el.id === selectedElement ? { ...el, x: left, y: top } : el))
-              );
+              // Get safe position using collision prevention hook
+              const safePosition = getSafePosition(selectedElement, left, top);
+
+              if (safePosition) {
+                // Update visual position
+                target.style.left = `${safePosition.x}px`;
+                target.style.top = `${safePosition.y}px`;
+
+                // Update element position in state
+                setElements(prev =>
+                  prev.map(el =>
+                    el.id === selectedElement ? { ...el, x: safePosition.x, y: safePosition.y } : el
+                  )
+                );
+              } else {
+                // No safe position found, revert to current position
+                target.style.left = `${selectedEl.x}px`;
+                target.style.top = `${selectedEl.y}px`;
+              }
             }}
             onDragEnd={({ target }) => {
               setIsDragging(false);
@@ -558,11 +600,26 @@ export default function Panel({
             onResizeStart={() => {
               setIsDragging(true);
             }}
-            onResize={({ target, width, height, left, top }) => {
-              target.style.width = `${width}px`;
-              target.style.height = `${height}px`;
-              target.style.left = `${left}px`;
-              target.style.top = `${top}px`;
+            onResize={({ target, width: newWidth, height: newHeight, left, top }) => {
+              const selectedEl = elements.find(el => el.id === selectedElement);
+              if (!selectedEl) return;
+
+              // Get safe resize dimensions using collision prevention hook
+              const safeDimensions = getSafeResize(selectedElement, newWidth, newHeight, left, top);
+
+              if (safeDimensions) {
+                // Apply safe dimensions
+                target.style.width = `${safeDimensions.width}px`;
+                target.style.height = `${safeDimensions.height}px`;
+                target.style.left = `${safeDimensions.x}px`;
+                target.style.top = `${safeDimensions.y}px`;
+              } else {
+                // Fallback to original dimensions
+                target.style.width = `${selectedEl.width}px`;
+                target.style.height = `${selectedEl.height}px`;
+                target.style.left = `${selectedEl.x}px`;
+                target.style.top = `${selectedEl.y}px`;
+              }
             }}
             onResizeEnd={({ target }) => {
               setIsDragging(false);
@@ -571,7 +628,7 @@ export default function Panel({
               const left = parseInt(target.style.left);
               const top = parseInt(target.style.top);
 
-              // Save to history
+              // Save to history with collision-checked values
               setElements(prev => {
                 const updated = prev.map(el =>
                   el.id === selectedElement
