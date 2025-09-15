@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { iconComponentMap } from '../utils/iconMap.jsx';
 import { icons } from '../utils/icons';
-import { exportAsImage } from '../utils/exportImage';
+import { exportImage } from '../utils/exportImage';
 import IconControls from './sidebar/IconControls';
 import TextControls from './sidebar/TextControls';
 import ExportModal from './ExportModal';
@@ -51,7 +51,7 @@ export default function SidebarLeft({
       setIsExporting(true);
       setExportProgress(0);
 
-      await exportAsImage('png', 'panel-wrapper', (progress, _message) => {
+      await exportImage('panel-wrapper', 'png', (progress, _message) => {
         setExportProgress(progress);
       });
 
