@@ -27,20 +27,36 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
 
     updateProgress(30, 'Preparing export...');
 
-    // Create a simple CSS override that makes everything cyan
+    // Create a comprehensive CSS override for clean export
     const style = document.createElement('style');
     style.id = 'export-override-styles';
     style.textContent = `
-      /* Hide guides and selection handles */
+      /* Hide ALL UI elements that shouldn't be in the export */
       #${elementId} .bg-cyan-400,
       #${elementId} .bg-cyan-300,
+      #${elementId} .bg-yellow-400,
+      #${elementId} .bg-blue-400,
+      #${elementId} .bg-green-400,
+      #${elementId} .bg-purple-400,
       #${elementId} [class*="moveable"],
       #${elementId} .moveable-control-box,
       #${elementId} .moveable-line,
-      #${elementId} [data-able="moveable"] {
+      #${elementId} [data-able="moveable"],
+      #${elementId} .react-moveable-control,
+      #${elementId} .react-moveable-line,
+      #${elementId} .react-moveable,
+      #${elementId} [class*="guide"],
+      #${elementId} [class*="snapping"] {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
+      }
+      
+      /* HIDE THE PANEL BACKGROUND - this was causing the gray bar */
+      #${elementId} #panel-inner {
+        background: transparent !important;
+        border: none !important;
+        opacity: 1 !important;
       }
       
       /* Make everything cyan and remove all effects - enhanced for complex SVGs */
@@ -75,7 +91,7 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
         visibility: visible !important;
       }
       
-      /* Specific rules to remove text glow/border effects - AGGRESSIVE VERSION */
+      /* Specific rules to remove text glow/border effects - PRESERVE FONTS */
       #${elementId} textarea,
       #${elementId} [contenteditable],
       #${elementId} .text-element,
@@ -100,6 +116,7 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
         animation: none !important;
         transition: none !important;
         color: #00ffff !important;
+        /* DO NOT override font properties here - preserve them */
       }
       
       /* Extra aggressive targeting for any possible glow scenarios */
@@ -150,16 +167,16 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
         className: element.className,
       };
 
-      // Preserve important font properties before clearing
-      const fontSize = element.style.fontSize || getComputedStyle(element).fontSize;
-      const fontFamily = element.style.fontFamily || getComputedStyle(element).fontFamily;
-      const fontWeight = element.style.fontWeight || getComputedStyle(element).fontWeight;
-      const textAlign = element.style.textAlign || getComputedStyle(element).textAlign;
+      // Get computed styles BEFORE modifying anything to preserve font properties
+      const computedStyle = getComputedStyle(element);
+      const fontSize = element.style.fontSize || computedStyle.fontSize;
+      const fontFamily = element.style.fontFamily || computedStyle.fontFamily;
+      const fontWeight = element.style.fontWeight || computedStyle.fontWeight;
+      const fontStyle = element.style.fontStyle || computedStyle.fontStyle;
+      const textAlign = element.style.textAlign || computedStyle.textAlign;
+      const lineHeight = element.style.lineHeight || computedStyle.lineHeight;
 
-      // COMPLETELY remove all glow effects by brute force
-      element.style.cssText = ''; // Clear all inline styles first
-
-      // Set only the essential styles we need, nothing else
+      // ONLY remove problematic styles, keep font properties
       element.style.setProperty('color', '#00ffff', 'important');
       element.style.setProperty('text-shadow', 'none', 'important');
       element.style.setProperty('filter', 'none', 'important');
@@ -171,14 +188,20 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
       element.style.setProperty('animation', 'none', 'important');
       element.style.setProperty('transition', 'none', 'important');
 
-      // Preserve essential layout and font properties
-      element.style.setProperty('width', '100%', 'important');
-      element.style.setProperty('height', '100%', 'important');
-      element.style.setProperty('resize', 'none', 'important');
+      // PRESERVE FONT PROPERTIES - don't override what's already working
       element.style.setProperty('font-size', fontSize, 'important');
       element.style.setProperty('font-family', fontFamily, 'important');
       element.style.setProperty('font-weight', fontWeight, 'important');
+      element.style.setProperty('font-style', fontStyle, 'important');
       element.style.setProperty('text-align', textAlign, 'important');
+      if (lineHeight && lineHeight !== 'normal') {
+        element.style.setProperty('line-height', lineHeight, 'important');
+      }
+
+      // Preserve essential layout properties
+      element.style.setProperty('width', '100%', 'important');
+      element.style.setProperty('height', '100%', 'important');
+      element.style.setProperty('resize', 'none', 'important');
     });
 
     updateProgress(50, 'Capturing image...');
@@ -187,18 +210,37 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
     let dataUrl;
     const exportOptions = {
       backgroundColor: 'transparent',
-      skipFonts: true, // Skip external font loading to avoid CORS issues
+      skipFonts: false, // DON'T skip fonts - we need them preserved
       skipDefaultFonts: false, // Allow system fonts
+      useCORS: true, // Enable CORS for font loading
+      allowTaint: false, // Don't allow tainted canvas
       filter: node => {
-        // Skip external stylesheets that cause CORS issues
+        // Skip problematic elements but keep fonts
         if (node.tagName === 'LINK' && node.href && node.href.includes('fonts.googleapis.com')) {
-          return false;
+          return true; // KEEP Google Fonts
+        }
+        // Hide moveable elements
+        if (node.className && typeof node.className === 'string') {
+          if (
+            node.className.includes('moveable') ||
+            node.className.includes('guide') ||
+            node.className.includes('bg-cyan') ||
+            node.className.includes('bg-yellow') ||
+            node.className.includes('bg-blue') ||
+            node.className.includes('bg-green') ||
+            node.className.includes('bg-purple')
+          ) {
+            return false;
+          }
         }
         return true;
       },
       style: {
         transform: 'scale(1)',
         transformOrigin: 'top left',
+        fontSmooth: 'always',
+        '-webkit-font-smoothing': 'antialiased',
+        '-moz-osx-font-smoothing': 'grayscale',
       },
     };
 
