@@ -266,7 +266,7 @@ export default function Panel({
   const [isDragging, setIsDragging] = useState(false);
   const moveableRefs = useRef({});
 
-  // Generate snapping guidelines for react-moveable
+  // Generate snapping guidelines for react-moveable (including element centers)
   const getSnapGuides = () => {
     const horizontalGuides = [
       height / 3, // Third
@@ -279,6 +279,21 @@ export default function Panel({
       width / 2, // Half/Center
       (2 * width) / 3, // Two thirds
     ];
+
+    // Add element centers to guidelines for better snapping
+    elements.forEach(el => {
+      if (el.id !== selectedElement) {
+        // Add horizontal center line (vertical guide)
+        verticalGuides.push(el.x + el.width / 2);
+
+        // Add vertical center line (horizontal guide)
+        horizontalGuides.push(el.y + el.height / 2);
+
+        // Optionally add edge positions for comprehensive snapping
+        verticalGuides.push(el.x, el.x + el.width);
+        horizontalGuides.push(el.y, el.y + el.height);
+      }
+    });
 
     return {
       horizontal: horizontalGuides,
@@ -560,8 +575,15 @@ export default function Panel({
               const selectedEl = elements.find(el => el.id === selectedElement);
               if (!selectedEl) return;
 
+              // Apply custom snapping logic first using the existing hook reference
+              const snappedPosition = _applySnapping(selectedEl, left, top);
+
               // Get safe position using collision prevention hook
-              const safePosition = getSafePosition(selectedElement, left, top);
+              const safePosition = getSafePosition(
+                selectedElement,
+                snappedPosition.x,
+                snappedPosition.y
+              );
 
               if (safePosition) {
                 // Update visual position
@@ -644,13 +666,7 @@ export default function Panel({
             snapThreshold={15}
             horizontalGuidelines={getSnapGuides().horizontal}
             verticalGuidelines={getSnapGuides().vertical}
-            elementGuidelines={elements
-              .filter(el => el.id !== selectedElement)
-              .map(el => ({
-                element: moveableRefs.current[el.id],
-                className: 'element-guideline',
-              }))
-              .filter(guide => guide.element)}
+            /* elementGuidelines removed - now using custom guidelines that include centers */
             /* Bounds */
             bounds={{ left: 0, top: 0, right: width, bottom: height }}
             /* Styling */

@@ -41,10 +41,14 @@ export default function useSnapping({ elements, width, height, setGuides, setDis
         { pos: panelTwoThirdX, guideLine: (2 * width) / 3, name: 'two-third' },
       ];
 
-      horizontalDivisions.forEach(({ pos, guideLine }) => {
+      horizontalDivisions.forEach(({ pos, guideLine, name }) => {
         if (Math.abs(x - pos) < snapTolerance) {
           x = pos;
-          guides.push({ orientation: 'vertical', position: guideLine });
+          guides.push({
+            orientation: 'vertical',
+            position: guideLine,
+            type: name === 'center' ? 'panel-center' : 'panel-division',
+          });
         }
       });
 
@@ -55,48 +59,78 @@ export default function useSnapping({ elements, width, height, setGuides, setDis
         { pos: panelTwoThirdY, guideLine: (2 * height) / 3, name: 'two-third' },
       ];
 
-      verticalDivisions.forEach(({ pos, guideLine }) => {
+      verticalDivisions.forEach(({ pos, guideLine, name }) => {
         if (Math.abs(y - pos) < snapTolerance) {
           y = pos;
-          guides.push({ orientation: 'horizontal', position: guideLine });
+          guides.push({
+            orientation: 'horizontal',
+            position: guideLine,
+            type: name === 'center' ? 'panel-center' : 'panel-division',
+          });
         }
       });
 
-      // --- Snap relative to other elements ---
+      // --- Snap relative to other elements (prioritize centers) ---
       elements.forEach(other => {
         if (other.id === el.id) return;
 
-        // Edge alignments
-        const alignments = [
-          { el: x, other: other.x }, // Left edges
-          { el: x + el.width, other: other.x + other.width }, // Right edges
-          { el: x, other: other.x + other.width }, // Left to right
-          { el: x + el.width, other: other.x }, // Right to left
-          { el: x + el.width / 2, other: other.x + other.width / 2 }, // Centers
+        // PRIORITIZE CENTER ALIGNMENTS FIRST (higher priority by checking first)
+        const centerAlignments = [
+          { el: x + el.width / 2, other: other.x + other.width / 2 }, // Horizontal centers
         ];
 
-        alignments.forEach(({ el: elX, other: otherX }) => {
+        centerAlignments.forEach(({ el: elX, other: otherX }) => {
           if (Math.abs(elX - otherX) < snapTolerance) {
             x = otherX - (elX - x);
-            guides.push({ orientation: 'vertical', position: otherX });
+            guides.push({ orientation: 'vertical', position: otherX, type: 'center' });
           }
         });
 
-        // Same for vertical alignments
-        const verticalAlignments = [
-          { el: y, other: other.y }, // Top edges
-          { el: y + el.height, other: other.y + other.height }, // Bottom edges
-          { el: y, other: other.y + other.height }, // Top to bottom
-          { el: y + el.height, other: other.y }, // Bottom to top
-          { el: y + el.height / 2, other: other.y + other.height / 2 }, // Centers
+        // Edge alignments (lower priority, only if no center snap occurred)
+        if (!guides.some(guide => guide.orientation === 'vertical')) {
+          const edgeAlignments = [
+            { el: x, other: other.x }, // Left edges
+            { el: x + el.width, other: other.x + other.width }, // Right edges
+            { el: x, other: other.x + other.width }, // Left to right
+            { el: x + el.width, other: other.x }, // Right to left
+          ];
+
+          edgeAlignments.forEach(({ el: elX, other: otherX }) => {
+            if (Math.abs(elX - otherX) < snapTolerance) {
+              x = otherX - (elX - x);
+              guides.push({ orientation: 'vertical', position: otherX, type: 'edge' });
+            }
+          });
+        }
+
+        // Same for vertical alignments - PRIORITIZE CENTERS
+        const verticalCenterAlignments = [
+          { el: y + el.height / 2, other: other.y + other.height / 2 }, // Vertical centers
         ];
 
-        verticalAlignments.forEach(({ el: elY, other: otherY }) => {
+        verticalCenterAlignments.forEach(({ el: elY, other: otherY }) => {
           if (Math.abs(elY - otherY) < snapTolerance) {
             y = otherY - (elY - y);
-            guides.push({ orientation: 'horizontal', position: otherY });
+            guides.push({ orientation: 'horizontal', position: otherY, type: 'center' });
           }
         });
+
+        // Vertical edge alignments (only if no center snap occurred)
+        if (!guides.some(guide => guide.orientation === 'horizontal')) {
+          const verticalEdgeAlignments = [
+            { el: y, other: other.y }, // Top edges
+            { el: y + el.height, other: other.y + other.height }, // Bottom edges
+            { el: y, other: other.y + other.height }, // Top to bottom
+            { el: y + el.height, other: other.y }, // Bottom to top
+          ];
+
+          verticalEdgeAlignments.forEach(({ el: elY, other: otherY }) => {
+            if (Math.abs(elY - otherY) < snapTolerance) {
+              y = otherY - (elY - y);
+              guides.push({ orientation: 'horizontal', position: otherY, type: 'edge' });
+            }
+          });
+        }
       });
 
       // If no snapping occurred, snap to grid
