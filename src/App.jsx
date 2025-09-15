@@ -24,6 +24,7 @@ export default function App() {
   const [speed, setSpeed] = useState(3);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState('panel'); // 'panel', 'tools', 'controls'
+  const [hasInitializedElements, setHasInitializedElements] = useState(false);
 
   // Simple placeholder for saveToHistory - implement useHistory hook if needed
   const saveToHistory = () => {
@@ -61,10 +62,10 @@ export default function App() {
 
   const { width: panelWidth, height: panelHeight } = getMobilePanelDimensions();
 
-  // Initialize placeholder text with dynamic positioning
+  // Initialize placeholder text with dynamic positioning (only once)
   useEffect(() => {
-    // Check if we already have elements to avoid resetting on every resize
-    if (elements.length === 0) {
+    // Only create the initial element if we haven't initialized elements yet
+    if (!hasInitializedElements) {
       const placeholderElement = {
         id: Date.now(),
         type: 'text',
@@ -78,8 +79,9 @@ export default function App() {
       };
       setElements([placeholderElement]);
       setSelectedElement(placeholderElement.id);
+      setHasInitializedElements(true);
     }
-  }, [panelWidth, panelHeight, isMobile, elements.length]);
+  }, [panelWidth, panelHeight, isMobile, hasInitializedElements]);
 
   // Mirror body scroll into sidebar scroll (desktop only)
   useEffect(() => {

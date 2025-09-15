@@ -35,26 +35,6 @@ export default function Panel({
   // Set default glowMode to rainbow if not provided
   const effectiveGlowMode = glowMode || 'rainbow';
 
-  // Auto-enter edit mode for new text elements with _autoEdit flag
-  useEffect(() => {
-    const selectedEl = elements.find(el => el.id === selectedElement);
-    if (selectedEl && selectedEl._autoEdit && selectedEl.type === 'text' && !isEditing) {
-      setIsEditing(true);
-      // Remove the _autoEdit flag
-      setElements(prev =>
-        prev.map(el => (el.id === selectedElement ? { ...el, _autoEdit: undefined } : el))
-      );
-      // Focus the textarea
-      setTimeout(() => {
-        const textarea = textareaRefs.current[selectedElement];
-        if (textarea) {
-          textarea.focus();
-          textarea.select();
-        }
-      }, 100);
-    }
-  }, [selectedElement, elements, isEditing, setElements]);
-
   // Helper function to find nearby free space when collision occurs
   const _findNearbyFreeSpace = (preferredX, preferredY, elementWidth, elementHeight) => {
     const gridSize = 20;
@@ -339,7 +319,14 @@ export default function Panel({
   const handleElementClick = (e, el) => {
     e.stopPropagation();
 
-    // If it's already selected text element, enable editing on single click
+    // If clicking on a different element, exit edit mode and select the new one
+    if (selectedElement !== el.id) {
+      setIsEditing(false);
+      setSelectedElement(el.id);
+      return;
+    }
+
+    // If it's already selected, second click enters edit mode for text elements
     if (el.type === 'text' && selectedElement === el.id && !isEditing) {
       setIsEditing(true);
       // Focus the textarea after a small delay to ensure it's rendered
@@ -353,10 +340,7 @@ export default function Panel({
       return;
     }
 
-    // Select the element
-    setSelectedElement(el.id);
-
-    // If double click, enable editing
+    // Double click always enters edit mode for text elements
     if (e.detail === 2 && el.type === 'text') {
       setIsEditing(true);
       // Focus the textarea after a small delay to ensure it's rendered
@@ -549,6 +533,13 @@ export default function Panel({
           borderRadius: roundedEdges ? `${borderRadius}px` : '0px',
           opacity: isPowerOn ? 0.95 : 0.3,
           border: '2px solid rgba(255,255,255,0.3)', // Clean border without glow for export
+        }}
+        onClick={e => {
+          // Deselect elements when clicking on empty panel area
+          if (e.target.id === 'panel-inner') {
+            setSelectedElement(null);
+            setIsEditing(false);
+          }
         }}
       >
         {elements.map(el => (
