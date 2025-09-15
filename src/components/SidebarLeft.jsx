@@ -184,6 +184,7 @@ export default function SidebarLeft({
       fontWeight: 'normal',
       fontStyle: 'normal',
       textAlign: 'center',
+      _autoEdit: true, // Flag to auto-enter edit mode
     };
     setElements([...elements, newElement]);
     setSelectedElement(newElement.id);

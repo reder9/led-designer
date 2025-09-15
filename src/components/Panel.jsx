@@ -35,6 +35,26 @@ export default function Panel({
   // Set default glowMode to rainbow if not provided
   const effectiveGlowMode = glowMode || 'rainbow';
 
+  // Auto-enter edit mode for new text elements with _autoEdit flag
+  useEffect(() => {
+    const selectedEl = elements.find(el => el.id === selectedElement);
+    if (selectedEl && selectedEl._autoEdit && selectedEl.type === 'text' && !isEditing) {
+      setIsEditing(true);
+      // Remove the _autoEdit flag
+      setElements(prev =>
+        prev.map(el => (el.id === selectedElement ? { ...el, _autoEdit: undefined } : el))
+      );
+      // Focus the textarea
+      setTimeout(() => {
+        const textarea = textareaRefs.current[selectedElement];
+        if (textarea) {
+          textarea.focus();
+          textarea.select();
+        }
+      }, 100);
+    }
+  }, [selectedElement, elements, isEditing, setElements]);
+
   // Helper function to find nearby free space when collision occurs
   const _findNearbyFreeSpace = (preferredX, preferredY, elementWidth, elementHeight) => {
     const gridSize = 20;
@@ -318,6 +338,22 @@ export default function Panel({
 
   const handleElementClick = (e, el) => {
     e.stopPropagation();
+
+    // If it's already selected text element, enable editing on single click
+    if (el.type === 'text' && selectedElement === el.id && !isEditing) {
+      setIsEditing(true);
+      // Focus the textarea after a small delay to ensure it's rendered
+      setTimeout(() => {
+        const textarea = textareaRefs.current[el.id];
+        if (textarea) {
+          textarea.focus();
+          textarea.select();
+        }
+      }, 50);
+      return;
+    }
+
+    // Select the element
     setSelectedElement(el.id);
 
     // If double click, enable editing
@@ -465,9 +501,12 @@ export default function Panel({
       id='panel-wrapper'
       className='relative flex items-center justify-center'
       style={{ width, height }}
-      onClick={() => {
-        setSelectedElement(null);
-        setIsEditing(false);
+      onClick={e => {
+        // Only deselect if clicking on the background (not on an element)
+        if (e.target === e.currentTarget) {
+          setSelectedElement(null);
+          setIsEditing(false);
+        }
       }}
     >
       {/* Smooth, colorful LED-style glow border */}
@@ -530,7 +569,14 @@ export default function Panel({
               top: el.y,
               width: el.width,
               height: el.height,
-              cursor: selectedElement === el.id ? 'move' : 'pointer',
+              cursor:
+                el.type === 'text'
+                  ? isEditing && selectedElement === el.id
+                    ? 'text'
+                    : 'pointer'
+                  : selectedElement === el.id
+                    ? 'move'
+                    : 'pointer',
             }}
           >
             <ElementRenderer
@@ -544,8 +590,8 @@ export default function Panel({
               deleteSelected={deleteSelected}
               brightness={brightness}
               glowMode={effectiveGlowMode}
-              currentTime={t}
-              isEditing={isEditing}
+              currentTime={currentTime}
+              isEditing={isEditing && selectedElement === el.id} // Only the selected element is editing
               setIsEditing={setIsEditing}
               textGlowIntensity={textGlowIntensity}
               borderRadius={borderRadius}
@@ -617,7 +663,7 @@ export default function Panel({
               });
             }}
             /* Resizable */
-            resizable={true}
+            resizable={!isEditing}
             throttleResize={1}
             onResizeStart={() => {
               setIsDragging(true);

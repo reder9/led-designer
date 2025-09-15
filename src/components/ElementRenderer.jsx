@@ -168,8 +168,8 @@ function ElementRenderer({
           border: selected ? '1px dashed cyan' : 'none',
           transition: 'all 0.3s ease',
           animation: glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none',
-          cursor: isEditing ? 'text' : 'default',
-          pointerEvents: isEditing ? 'auto' : 'none',
+          cursor: isEditing ? 'text' : 'pointer',
+          pointerEvents: 'auto', // Always allow clicks so we can handle them properly
           whiteSpace: 'pre-wrap', // Preserve line breaks and wrap text
           overflow: 'hidden', // Hide scrollbars
           wordWrap: 'break-word', // Break long words if needed
@@ -186,15 +186,26 @@ function ElementRenderer({
         }}
         readOnly={!isEditing}
         onClick={e => {
-          // Prevent click from propagating to parent when editing
+          // If we're editing, allow normal textarea interaction
           if (isEditing) {
+            // Don't propagate when actively editing to prevent interference
             e.stopPropagation();
+            return;
           }
+
+          // If not editing, we need to allow the parent to handle selection first
+          // Don't stop propagation so parent can select the element
+          // The parent will then call setIsEditing if appropriate
         }}
         onDoubleClick={e => {
-          // Prevent double click from propagating to parent when editing
-          if (isEditing) {
-            e.stopPropagation();
+          // Double click should always try to enable editing
+          e.stopPropagation();
+          if (!isEditing && setIsEditing) {
+            setIsEditing(true);
+            setTimeout(() => {
+              e.target.focus();
+              e.target.select();
+            }, 10);
           }
         }}
         onFocus={e => {
