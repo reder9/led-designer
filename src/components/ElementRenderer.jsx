@@ -168,8 +168,8 @@ function ElementRenderer({
           border: selected ? '1px dashed cyan' : 'none',
           transition: 'all 0.3s ease',
           animation: glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none',
-          cursor: isEditing ? 'text' : 'pointer',
-          pointerEvents: 'auto', // Always allow clicks so we can handle them properly
+          cursor: isEditing ? 'text' : 'move',
+          pointerEvents: isEditing ? 'auto' : 'none', // When not editing, don't interfere with parent drag events
           whiteSpace: 'pre-wrap', // Preserve line breaks and wrap text
           overflow: 'hidden', // Hide scrollbars
           wordWrap: 'break-word', // Break long words if needed

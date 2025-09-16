@@ -319,28 +319,13 @@ export default function Panel({
   const handleElementClick = (e, el) => {
     e.stopPropagation();
 
-    // If clicking on a different element, exit edit mode and select the new one
-    if (selectedElement !== el.id) {
-      setIsEditing(false);
-      setSelectedElement(el.id);
-      return;
-    }
+    // Always exit edit mode when clicking on any element
+    setIsEditing(false);
 
-    // If it's already selected, second click enters edit mode for text elements
-    if (el.type === 'text' && selectedElement === el.id && !isEditing) {
-      setIsEditing(true);
-      // Focus the textarea after a small delay to ensure it's rendered
-      setTimeout(() => {
-        const textarea = textareaRefs.current[el.id];
-        if (textarea) {
-          textarea.focus();
-          textarea.select();
-        }
-      }, 50);
-      return;
-    }
+    // Select the element (same behavior for all element types)
+    setSelectedElement(el.id);
 
-    // Double click always enters edit mode for text elements
+    // Special case: double-click on text elements enters edit mode
     if (e.detail === 2 && el.type === 'text') {
       setIsEditing(true);
       // Focus the textarea after a small delay to ensure it's rendered
@@ -561,13 +546,11 @@ export default function Panel({
               width: el.width,
               height: el.height,
               cursor:
-                el.type === 'text'
-                  ? isEditing && selectedElement === el.id
+                selectedElement === el.id
+                  ? isEditing && el.type === 'text'
                     ? 'text'
-                    : 'pointer'
-                  : selectedElement === el.id
-                    ? 'move'
-                    : 'pointer',
+                    : 'move'
+                  : 'pointer',
             }}
           >
             <ElementRenderer
