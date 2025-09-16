@@ -174,12 +174,13 @@ function ElementRenderer({
           fontSize: el.fontSize,
           fontWeight: el.fontWeight || 'normal',
           fontStyle: el.fontStyle || 'normal',
-          color: isPowerOn ? glowColor : '#555',
+          color: isPowerOn ? glowColor : '#666', // Lighter grey for better visibility when power is off
           opacity: elementOpacity,
-          textShadow: getTextGlowEffect(),
+          textShadow: isPowerOn ? getTextGlowEffect() : 'none', // No glow effects when power is off
           border: selected ? '1px dashed cyan' : 'none',
           transition: 'all 0.3s ease',
-          animation: glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none',
+          animation:
+            isPowerOn && glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none', // No animation when power is off
           cursor: isEditing ? 'text' : 'move',
           pointerEvents: isEditing ? 'auto' : 'none', // When not editing, don't interfere with parent drag events
           whiteSpace: 'pre-wrap', // Preserve line breaks and wrap text
@@ -291,13 +292,14 @@ function ElementRenderer({
                 width: '100%',
                 height: '100%',
                 pointerEvents: 'none',
-                color: '#000',
+                color: isPowerOn ? '#000' : '#666', // Lighter grey when power is off for visibility
                 filter: isPowerOn
                   ? glowMode === 'rainbow'
                     ? 'invert(1)'
                     : 'url(#coloredInvert)'
-                  : 'brightness(0.7)',
-                animation: glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none',
+                  : 'invert(1)', // Invert when off to make grey icons visible on black background
+                animation:
+                  isPowerOn && glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none', // No animation when power is off
               }}
             />
           </div>
