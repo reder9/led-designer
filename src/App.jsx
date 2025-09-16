@@ -129,14 +129,18 @@ export default function App() {
         // --- ENHANCED MOBILE LAYOUT ---
         <div className='flex-1 flex flex-col bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden'>
           {/* Mobile Panel - Always visible at top */}
-          <div className='flex-none bg-gray-900 border-b border-gray-700 p-3'>
+          <div
+            className={`flex-none bg-gray-900 border-b border-gray-700 ${isMobile ? 'p-4' : 'p-3'}`}
+          >
             <div className='w-full flex justify-center'>
               <div
-                className='relative bg-black rounded-xl overflow-hidden'
+                className={`relative bg-black rounded-xl ${isMobile ? 'overflow-visible' : 'overflow-hidden'}`}
                 style={{
                   width: `${panelWidth}px`,
                   height: `${panelHeight}px`,
                   maxWidth: '100%',
+                  // Add subtle margin on mobile to accommodate the glow
+                  margin: isMobile ? '10px' : '0px',
                 }}
               >
                 <Panel

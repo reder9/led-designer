@@ -494,17 +494,29 @@ export default function Panel({
       {/* Smooth, colorful LED-style glow border */}
       {showLedBorder && isPowerOn && (
         <div
-          className='absolute inset-0 rounded-2xl pointer-events-none'
+          className='absolute pointer-events-none'
           style={{
-            borderRadius: roundedEdges ? `${borderRadius}px` : '0px',
+            // For mobile, extend the glow moderately beyond the panel boundaries
+            top: isMobile ? '-10px' : '0px',
+            left: isMobile ? '-10px' : '0px',
+            right: isMobile ? '-10px' : '0px',
+            bottom: isMobile ? '-10px' : '0px',
+            inset: isMobile ? undefined : '0',
+            borderRadius: roundedEdges ? `${borderRadius + (isMobile ? 10 : 0)}px` : '0px',
             background: getGlowBackground(),
-            filter: 'blur(20px)',
-            boxShadow: `
-              0 0 18px ${glowColor},
-              0 0 40px ${glowColor},
-              0 0 65px ${glowColor}
-            `,
-            opacity: brightness / 100,
+            filter: isMobile ? 'blur(25px)' : 'blur(20px)',
+            boxShadow: isMobile
+              ? `
+                  0 0 20px ${glowColor},
+                  0 0 35px ${glowColor},
+                  0 0 50px ${glowColor}
+                `
+              : `
+                  0 0 18px ${glowColor},
+                  0 0 40px ${glowColor},
+                  0 0 65px ${glowColor}
+                `,
+            opacity: isMobile ? Math.min((brightness / 100) * 1.1, 1) : brightness / 100,
           }}
         />
       )}
