@@ -25,6 +25,7 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState('panel'); // 'panel', 'tools', 'controls'
   const [hasInitializedElements, setHasInitializedElements] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   // Simple placeholder for saveToHistory - implement useHistory hook if needed
   const saveToHistory = () => {
@@ -66,16 +67,20 @@ export default function App() {
   useEffect(() => {
     // Only create the initial element if we haven't initialized elements yet
     if (!hasInitializedElements) {
+      const textWidth = isMobile ? Math.min(panelWidth * 0.8, 300) : 400;
+      const textHeight = isMobile ? 40 : 60;
+      const fontSize = isMobile ? Math.max(panelWidth / 30, 14) : 32; // Smaller font for mobile
+
       const placeholderElement = {
         id: Date.now(),
         type: 'text',
         content: 'Customize your LED panel',
-        x: Math.max(panelWidth / 2 - 200, 10),
-        y: Math.max(panelHeight / 2 - 30, 10),
-        width: Math.min(400, panelWidth - 20),
-        height: 60,
+        x: (panelWidth - textWidth) / 2, // Properly center horizontally
+        y: (panelHeight - textHeight) / 2, // Properly center vertically
+        width: textWidth,
+        height: textHeight,
         fontFamily: 'Impact',
-        fontSize: isMobile ? Math.max(panelWidth / 25, 16) : 32, // Scale font size for mobile
+        fontSize,
       };
       setElements([placeholderElement]);
       setSelectedElement(placeholderElement.id);
@@ -106,6 +111,15 @@ export default function App() {
     updateBodyHeight();
     window.addEventListener('resize', updateBodyHeight);
     return () => window.removeEventListener('resize', updateBodyHeight);
+  }, [isMobile]);
+
+  // Show welcome modal on desktop only
+  useEffect(() => {
+    // Only show if user hasn't explicitly dismissed it
+    const hasDismissedWelcome = localStorage.getItem('dismissedWelcomeModal');
+    if (!isMobile && !hasDismissedWelcome) {
+      setShowWelcomeModal(true);
+    }
   }, [isMobile]);
 
   return (
@@ -227,15 +241,11 @@ export default function App() {
           </div>
 
           {/* Mobile Bottom Navigation */}
-          <div className='flex-none bg-gray-900 border-t border-gray-700 safe-area-bottom'>
-            <div className='flex'>
+          <div className='mobile-bottom-nav'>
+            <div className='flex bg-gray-900'>
               <button
                 onClick={() => setMobileActiveTab('panel')}
-                className={`flex-1 flex flex-col items-center justify-center py-3 px-2 text-xs font-medium transition-colors ${
-                  mobileActiveTab === 'panel'
-                    ? 'text-cyan-400 bg-gray-800 border-t-2 border-cyan-400'
-                    : 'text-gray-400 hover:text-white'
-                }`}
+                className={`mobile-nav-item ${mobileActiveTab === 'panel' ? 'active' : ''}`}
               >
                 <svg className='w-5 h-5 mb-1' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                   <rect x='3' y='3' width='18' height='18' rx='2' ry='2' />
@@ -247,11 +257,7 @@ export default function App() {
 
               <button
                 onClick={() => setMobileActiveTab('tools')}
-                className={`flex-1 flex flex-col items-center justify-center py-3 px-2 text-xs font-medium transition-colors ${
-                  mobileActiveTab === 'tools'
-                    ? 'text-cyan-400 bg-gray-800 border-t-2 border-cyan-400'
-                    : 'text-gray-400 hover:text-white'
-                }`}
+                className={`mobile-nav-item ${mobileActiveTab === 'tools' ? 'active' : ''}`}
               >
                 <svg className='w-5 h-5 mb-1' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                   <path d='M12 19l7-7 3 3-7 7-3-3z' />
@@ -264,11 +270,7 @@ export default function App() {
 
               <button
                 onClick={() => setMobileActiveTab('controls')}
-                className={`flex-1 flex flex-col items-center justify-center py-3 px-2 text-xs font-medium transition-colors ${
-                  mobileActiveTab === 'controls'
-                    ? 'text-cyan-400 bg-gray-800 border-t-2 border-cyan-400'
-                    : 'text-gray-400 hover:text-white'
-                }`}
+                className={`mobile-nav-item ${mobileActiveTab === 'controls' ? 'active' : ''}`}
               >
                 <svg className='w-5 h-5 mb-1' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                   <circle cx='12' cy='12' r='3' />
@@ -381,6 +383,94 @@ export default function App() {
 
       {/* Keyboard Shortcuts Help */}
       <KeyboardShortcutsHelp />
+
+      {/* Welcome Modal for Desktop */}
+      {showWelcomeModal && !isMobile && (
+        <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4'>
+          <div className='bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700/50'>
+            <div className='p-8 text-center'>
+              {/* Header */}
+              <div className='mb-6'>
+                <div className='w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center'>
+                  <svg
+                    className='w-8 h-8 text-white'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <rect x='3' y='3' width='18' height='18' rx='2' ry='2' />
+                    <circle cx='9' cy='9' r='2' />
+                    <path d='m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21' />
+                  </svg>
+                </div>
+                <h2 className='text-2xl font-bold text-white mb-2'>Welcome to LED Designer</h2>
+                <p className='text-gray-400'>Create stunning LED panel displays in minutes</p>
+              </div>
+
+              {/* Quick Tips */}
+              <div className='space-y-3 mb-8 text-left'>
+                <div className='flex items-start space-x-3'>
+                  <div className='w-2 h-2 bg-cyan-400 rounded-full mt-2 flex-shrink-0'></div>
+                  <p className='text-gray-300 text-sm'>
+                    <strong className='text-white'>Left sidebar:</strong> Add text and icons
+                  </p>
+                </div>
+                <div className='flex items-start space-x-3'>
+                  <div className='w-2 h-2 bg-cyan-400 rounded-full mt-2 flex-shrink-0'></div>
+                  <p className='text-gray-300 text-sm'>
+                    <strong className='text-white'>Right sidebar:</strong> Control LED effects
+                  </p>
+                </div>
+                <div className='flex items-start space-x-3'>
+                  <div className='w-2 h-2 bg-cyan-400 rounded-full mt-2 flex-shrink-0'></div>
+                  <p className='text-gray-300 text-sm'>
+                    <strong className='text-white'>Double-click text</strong> to edit content
+                  </p>
+                </div>
+                <div className='flex items-start space-x-3'>
+                  <div className='w-2 h-2 bg-cyan-400 rounded-full mt-2 flex-shrink-0'></div>
+                  <p className='text-gray-300 text-sm'>
+                    <strong className='text-white'>Export</strong> when ready to build
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className='space-y-4'>
+                <label className='flex items-center text-sm text-gray-300 cursor-pointer'>
+                  <input
+                    type='checkbox'
+                    className='mr-3 w-4 h-4 text-cyan-500 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2'
+                    onChange={e => {
+                      // Store the checkbox state but don't dismiss yet
+                      if (e.target.checked) {
+                        e.target.dataset.shouldDismiss = 'true';
+                      } else {
+                        e.target.dataset.shouldDismiss = 'false';
+                      }
+                    }}
+                  />
+                  Don't show me again
+                </label>
+                <button
+                  onClick={e => {
+                    const checkbox = e.target
+                      .closest('.space-y-4')
+                      .querySelector('input[type="checkbox"]');
+                    setShowWelcomeModal(false);
+                    if (checkbox && checkbox.checked) {
+                      localStorage.setItem('dismissedWelcomeModal', 'true');
+                    }
+                  }}
+                  className='w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]'
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

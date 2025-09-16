@@ -194,10 +194,20 @@
   /* Mobile bottom navigation */
   .mobile-bottom-nav {
     display: flex;
-    background: #1f2937;
+    flex-direction: column;
+    background: #111827;
     border-top: 1px solid #374151;
-    padding: 0.75rem 0;
-    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    margin-left: calc(-1 * env(safe-area-inset-left));
+    margin-right: calc(-1 * env(safe-area-inset-right));
+    margin-bottom: calc(-1 * env(safe-area-inset-bottom));
+    position: relative;
+    left: calc(-1 * env(safe-area-inset-left));
+    width: 100vw;
+  }
+
+  .mobile-bottom-nav .flex {
+    display: flex;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .mobile-nav-item {
@@ -205,18 +215,27 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.5rem;
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
     background: transparent;
     border: none;
     color: #9ca3af;
     cursor: pointer;
-    transition: color 0.2s;
+    transition: all 0.2s;
     font-size: 0.75rem;
     font-weight: 500;
+    border-top: 2px solid transparent;
   }
 
   .mobile-nav-item.active {
-    color: #3b82f6;
+    color: #06b6d4;
+    background-color: #1f2937;
+    border-top-color: #06b6d4;
+  }
+
+  .mobile-nav-item:hover:not(.active) {
+    color: #ffffff;
+    background-color: #374151;
   }
 
   .mobile-nav-item svg {
