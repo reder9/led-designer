@@ -131,16 +131,17 @@ export default function App() {
           {/* Mobile Panel - Always visible at top */}
           <div
             className={`flex-none bg-gray-900 border-b border-gray-700 ${isMobile ? 'p-4' : 'p-3'}`}
+            style={{ overflow: 'visible' }}
           >
             <div className='w-full flex justify-center'>
               <div
-                className={`relative bg-black rounded-xl ${isMobile ? 'overflow-visible' : 'overflow-hidden'}`}
+                className={`relative bg-black rounded-xl overflow-visible`}
                 style={{
                   width: `${panelWidth}px`,
                   height: `${panelHeight}px`,
                   maxWidth: '100%',
-                  // Add subtle margin on mobile to accommodate the glow
-                  margin: isMobile ? '10px' : '0px',
+                  // Add margin to accommodate the glow on both mobile and desktop
+                  margin: '30px',
                 }}
               >
                 <Panel

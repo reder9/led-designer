@@ -496,26 +496,34 @@ export default function Panel({
         <div
           className='absolute pointer-events-none'
           style={{
-            // For mobile, extend the glow moderately beyond the panel boundaries
-            top: isMobile ? '-10px' : '0px',
-            left: isMobile ? '-10px' : '0px',
-            right: isMobile ? '-10px' : '0px',
-            bottom: isMobile ? '-10px' : '0px',
-            inset: isMobile ? undefined : '0',
-            borderRadius: roundedEdges ? `${borderRadius + (isMobile ? 10 : 0)}px` : '0px',
+            // Extend the glow beyond the panel boundaries for both mobile and desktop
+            top: '-20px',
+            left: '-20px',
+            right: '-20px',
+            bottom: '-20px',
+            borderRadius: roundedEdges ? `${borderRadius + 20}px` : '0px',
             background: getGlowBackground(),
-            filter: isMobile ? 'blur(25px)' : 'blur(20px)',
+            // Add hardware acceleration for mobile
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden',
+            willChange: 'transform, filter',
+            isolation: 'isolate',
+            contain: 'layout style paint',
+            WebkitFontSmoothing: 'antialiased',
+            // Use more compatible filter syntax
+            filter: isMobile ? 'blur(25px) brightness(1.1)' : 'blur(25px) brightness(1.0)',
+            // More aggressive box-shadow for mobile with better browser support
             boxShadow: isMobile
-              ? `
-                  0 0 20px ${glowColor},
-                  0 0 35px ${glowColor},
-                  0 0 50px ${glowColor}
-                `
-              : `
-                  0 0 18px ${glowColor},
-                  0 0 40px ${glowColor},
-                  0 0 65px ${glowColor}
-                `,
+              ? [
+                  `0 0 20px ${glowColor}`,
+                  `0 0 35px ${glowColor}`,
+                  `0 0 50px ${glowColor}`,
+                  // Add an inset shadow for better definition
+                  `inset 0 0 20px ${glowColor}`,
+                ].join(', ')
+              : [`0 0 25px ${glowColor}`, `0 0 50px ${glowColor}`, `0 0 75px ${glowColor}`].join(
+                  ', '
+                ),
             opacity: isMobile ? Math.min((brightness / 100) * 1.1, 1) : brightness / 100,
           }}
         />
