@@ -27,6 +27,7 @@ export default function Panel({
   speed = 5,
   showLedBorder = true,
   textGlowIntensity = 1.0,
+  isMobile = false,
 }) {
   const textareaRefs = useRef({});
   const [currentTime, setCurrentTime] = useState(0);
@@ -325,8 +326,20 @@ export default function Panel({
     // Select the element (same behavior for all element types)
     setSelectedElement(el.id);
 
-    // Special case: double-click on text elements enters edit mode
-    if (e.detail === 2 && el.type === 'text') {
+    // Mobile text editing: Single click enters edit mode for text elements
+    if (isMobile && el.type === 'text') {
+      setIsEditing(true);
+      // Focus the textarea after a small delay to ensure it's rendered
+      setTimeout(() => {
+        const textarea = textareaRefs.current[el.id];
+        if (textarea) {
+          textarea.focus();
+          textarea.select();
+        }
+      }, 50);
+    }
+    // Desktop text editing: Double-click enters edit mode for text elements
+    else if (!isMobile && e.detail === 2 && el.type === 'text') {
       setIsEditing(true);
       // Focus the textarea after a small delay to ensure it's rendered
       setTimeout(() => {

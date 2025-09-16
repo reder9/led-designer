@@ -248,6 +248,81 @@
   }
 
   /* Touch-friendly controls */
+  .mobile-tools-container,
+  .mobile-controls-container {
+    width: 100vw;
+    margin-left: calc(-1 * env(safe-area-inset-left));
+    margin-right: calc(-1 * env(safe-area-inset-right));
+    position: relative;
+    left: calc(-1 * env(safe-area-inset-left));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    box-sizing: border-box;
+  }
+
+  /* Override sidebar padding on mobile to maximize width usage */
+  .mobile-tools-container > *,
+  .mobile-controls-container > * {
+    width: 100% !important;
+    max-width: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    border: none !important;
+  }
+
+  /* Override sidebar container constraints on mobile */
+  .mobile-tools-container .w-80,
+  .mobile-controls-container .w-80 {
+    width: 100% !important;
+  }
+
+  /* Override sidebar content padding on mobile */
+  .mobile-tools-container .p-4,
+  .mobile-controls-container .p-4 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* Ensure all content within mobile sidebars uses full width */
+  .mobile-tools-container .sidebar-section,
+  .mobile-controls-container .sidebar-section,
+  .mobile-tools-container .control-group,
+  .mobile-controls-container .control-group,
+  .mobile-tools-container > * > *,
+  .mobile-controls-container > * > * {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* Specific mobile sidebar content optimizations */
+  .mobile-tools-container .grid,
+  .mobile-controls-container .grid {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  /* Make mobile sidebar buttons and controls larger and more touch-friendly */
+  .mobile-tools-container button,
+  .mobile-controls-container button {
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+  }
+
+  /* Improve mobile grid layouts */
+  .mobile-tools-container .grid-cols-2,
+  .mobile-controls-container .grid-cols-2 {
+    gap: 0.75rem;
+  }
+
+  .mobile-tools-container .grid-cols-3,
+  .mobile-controls-container .grid-cols-3 {
+    gap: 0.5rem;
+  }
+
+  /* Touch-friendly controls */
   .mobile-controls button {
     min-height: 44px;
     padding: 0.75rem 1rem;

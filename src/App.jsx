@@ -155,6 +155,7 @@ export default function App() {
                   speed={speed}
                   showLedBorder={showLedBorder}
                   textGlowIntensity={textGlowIntensity}
+                  isMobile={isMobile}
                 />
               </div>
             </div>
@@ -192,7 +193,7 @@ export default function App() {
             )}
 
             {mobileActiveTab === 'tools' && (
-              <div className='flex-1 overflow-y-auto bg-gray-800'>
+              <div className='flex-1 overflow-y-auto bg-gray-800 mobile-tools-container'>
                 <SidebarLeft
                   elements={elements}
                   setElements={setElements}
@@ -223,7 +224,7 @@ export default function App() {
             )}
 
             {mobileActiveTab === 'controls' && (
-              <div className='flex-1 overflow-y-auto bg-gray-800 p-4'>
+              <div className='flex-1 overflow-y-auto bg-gray-800 mobile-controls-container'>
                 <SidebarRight
                   glowColor={glowColor}
                   setGlowColor={setGlowColor}
@@ -334,6 +335,7 @@ export default function App() {
                   speed={speed}
                   showLedBorder={showLedBorder}
                   textGlowIntensity={textGlowIntensity}
+                  isMobile={isMobile}
                 />
               </div>
             </div>
