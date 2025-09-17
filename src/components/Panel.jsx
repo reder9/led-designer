@@ -603,6 +603,7 @@ export default function Panel({
               setIsEditing={setIsEditing}
               textGlowIntensity={textGlowIntensity}
               borderRadius={borderRadius}
+              isMobile={isMobile}
             />
           </div>
         ))}

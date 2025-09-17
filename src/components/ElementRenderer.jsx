@@ -1,5 +1,7 @@
 import { iconComponentMap } from '../utils/iconMap.jsx';
-import { useEffect, useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { isTablet } from 'react-device-detect';
+import TextareaAutosize from 'react-textarea-autosize';
 
 function ElementRenderer({
   el,
@@ -19,10 +21,17 @@ function ElementRenderer({
   textGlowIntensity = 1.0,
   _borderRadius = 20,
   _backgroundColor = 'transparent',
+  isMobile = false,
 }) {
   const safeBrightness = typeof brightness === 'number' && !isNaN(brightness) ? brightness : 100;
   const elementOpacity = isPowerOn ? Math.max(0.1, Math.min(1, safeBrightness / 100)) : 0.3;
   const glowIntensity = Math.max(0, Math.min(1, safeBrightness / 100)) * 0.8;
+
+  // Enhanced mobile detection
+  const isActuallyMobile = isMobile || isTablet;
+
+  // State for mobile input management
+  const [mobileInputFocused, setMobileInputFocused] = useState(false);
 
   // Apply reduction to glow intensity for text
   const effectiveTextGlowIntensity = textGlowIntensity || glowIntensity * 0.5;
@@ -164,32 +173,70 @@ function ElementRenderer({
     const fontClass = getFontClass(el.fontFamily);
 
     return (
-      <div className='relative w-full h-full'>
-        <textarea
+      <div className={`relative w-full h-full ${isActuallyMobile ? 'touch-target' : ''}`}>
+        <TextareaAutosize
           ref={ref => (textareaRefs.current[el.id] = ref)}
           defaultValue={el.content}
           data-text-element='true'
           data-element-type='text'
+          minRows={1}
+          maxRows={isActuallyMobile ? 5 : 10}
           className={`w-full h-full resize-none bg-transparent outline-none ${getTextAlignmentClass()} ${fontClass}`}
           style={{
-            fontFamily: fontClass ? undefined : el.fontFamily, // Only use inline fontFamily if no class available
+            fontFamily: fontClass ? undefined : el.fontFamily,
             fontSize: el.fontSize,
             fontWeight: el.fontWeight || 'normal',
             fontStyle: el.fontStyle || 'normal',
-            color: isPowerOn ? glowColor : '#666', // Lighter grey for better visibility when power is off
+            color: isPowerOn ? glowColor : '#666',
             opacity: elementOpacity,
-            textShadow: isPowerOn ? getTextGlowEffect() : 'none', // No glow effects when power is off
+            textShadow: isPowerOn ? getTextGlowEffect() : 'none',
             border: selected ? '1px dashed cyan' : 'none',
             transition: 'all 0.3s ease',
             animation:
-              isPowerOn && glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none', // No animation when power is off
-            cursor: isEditing ? 'text' : 'move',
-            pointerEvents: isEditing ? 'auto' : 'none', // When not editing, don't interfere with parent drag events
-            whiteSpace: 'pre-wrap', // Preserve line breaks and wrap text
-            overflow: 'hidden', // Hide scrollbars
-            wordWrap: 'break-word', // Break long words if needed
+              isPowerOn && glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none',
+            cursor: isEditing ? 'text' : isActuallyMobile ? 'pointer' : 'move',
+            pointerEvents: isEditing ? 'auto' : 'none',
+            whiteSpace: 'pre-wrap',
+            overflow: 'hidden',
+            wordWrap: 'break-word',
+            // Enhanced mobile properties
+            WebkitUserSelect:
+              isActuallyMobile && (isEditing || mobileInputFocused) ? 'text' : 'none',
+            userSelect: isActuallyMobile && (isEditing || mobileInputFocused) ? 'text' : 'none',
+            WebkitTouchCallout: 'none',
+            WebkitTapHighlightColor: 'transparent',
+            // Better mobile input handling
+            touchAction: isActuallyMobile ? (isEditing ? 'auto' : 'manipulation') : 'auto',
+            // Prevent zoom on double tap for mobile
+            ...(isActuallyMobile && {
+              fontSize: `max(${el.fontSize}, 16px)`, // Prevent iOS zoom on input
+            }),
           }}
-          onBlur={onTextBlur}
+          // Enhanced mobile input attributes
+          inputMode={isActuallyMobile ? 'text' : undefined}
+          autoCapitalize={isActuallyMobile ? 'sentences' : undefined}
+          autoComplete='off'
+          spellCheck={isActuallyMobile}
+          autoCorrect={isActuallyMobile ? 'on' : 'off'}
+          onBlur={e => {
+            setMobileInputFocused(false);
+            if (onTextBlur) onTextBlur(e);
+          }}
+          onFocus={e => {
+            if (isActuallyMobile) {
+              setMobileInputFocused(true);
+              // Prevent parent scrolling when focused on mobile
+              e.target.parentElement.style.overflow = 'visible';
+              // Auto scroll to keep input in view
+              setTimeout(() => {
+                e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 100);
+            }
+            if (selectOnFocusRef.current) {
+              e.target.select();
+              selectOnFocusRef.current = false;
+            }
+          }}
           onKeyDown={onTextKeyDown}
           onChange={e => {
             // Update element content when text changes
@@ -208,9 +255,32 @@ function ElementRenderer({
               return;
             }
 
-            // If not editing, we need to allow the parent to handle selection first
+            // Mobile-friendly editing: single tap to edit on mobile devices
+            if (isMobile && selected && setIsEditing) {
+              e.stopPropagation();
+              setIsEditing(true);
+              setTimeout(() => {
+                e.target.focus();
+                e.target.select();
+              }, 100); // Slightly longer timeout for mobile
+              return;
+            }
+
+            // Desktop behavior: need parent to handle selection first
             // Don't stop propagation so parent can select the element
-            // The parent will then call setIsEditing if appropriate
+          }}
+          onTouchEnd={e => {
+            // Mobile touch handling for better responsiveness
+            if (isMobile && !isEditing && selected && setIsEditing) {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsEditing(true);
+              setTimeout(() => {
+                const target = e.target;
+                target.focus();
+                target.setSelectionRange(target.value.length, target.value.length); // Place cursor at end
+              }, 150); // Longer timeout for touch devices
+            }
           }}
           onDoubleClick={e => {
             // Double click should always try to enable editing
@@ -221,13 +291,6 @@ function ElementRenderer({
                 e.target.focus();
                 e.target.select();
               }, 10);
-            }
-          }}
-          onFocus={e => {
-            // Select all text when the textarea receives focus
-            if (selectOnFocusRef.current) {
-              e.target.select();
-              selectOnFocusRef.current = false;
             }
           }}
         />
