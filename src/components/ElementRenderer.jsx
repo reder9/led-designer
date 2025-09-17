@@ -235,7 +235,7 @@ function ElementRenderer({
         {/* Delete Button - Only show when selected */}
         {selected && (
           <button
-            className='absolute -top-6 -right-6 w-7 h-7 bg-white hover:bg-gray-100 text-red-500 hover:text-red-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-md border border-gray-200 z-10'
+            className='absolute -top-8 -right-8 w-7 h-7 bg-white hover:bg-gray-100 text-red-500 hover:text-red-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-md border border-gray-200 z-10'
             onClick={e => {
               e.stopPropagation();
               if (setElements) {
@@ -338,7 +338,7 @@ function ElementRenderer({
         {/* Delete Button - Only show when selected */}
         {selected && (
           <button
-            className='absolute -top-6 -right-6 w-7 h-7 bg-white hover:bg-gray-100 text-red-500 hover:text-red-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-md border border-gray-200 z-10'
+            className='absolute -top-8 -right-8 w-7 h-7 bg-white hover:bg-gray-100 text-red-500 hover:text-red-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-md border border-gray-200 z-10'
             onClick={e => {
               e.stopPropagation();
               if (setElements) {
