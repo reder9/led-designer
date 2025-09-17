@@ -195,7 +195,7 @@ function ElementRenderer({
             animation:
               isPowerOn && glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none',
             cursor: isEditing ? 'text' : isActuallyMobile ? 'pointer' : 'move',
-            pointerEvents: isEditing ? 'auto' : 'none',
+            pointerEvents: 'auto', // Always allow pointer events so mobile editing can work
             whiteSpace: 'pre-wrap',
             overflow: 'hidden',
             wordWrap: 'break-word',
@@ -248,6 +248,13 @@ function ElementRenderer({
           }}
           readOnly={!isEditing}
           onClick={e => {
+            console.log('Text element clicked:', {
+              isEditing,
+              isActuallyMobile,
+              selected,
+              hasSetIsEditing: !!setIsEditing,
+            });
+
             // If we're editing, allow normal textarea interaction
             if (isEditing) {
               // Don't propagate when actively editing to prevent interference
@@ -256,7 +263,8 @@ function ElementRenderer({
             }
 
             // Mobile-friendly editing: single tap to edit on mobile devices
-            if (isMobile && selected && setIsEditing) {
+            if (isActuallyMobile && selected && setIsEditing) {
+              console.log('Triggering mobile edit mode');
               e.stopPropagation();
               setIsEditing(true);
               setTimeout(() => {
@@ -271,7 +279,7 @@ function ElementRenderer({
           }}
           onTouchEnd={e => {
             // Mobile touch handling for better responsiveness
-            if (isMobile && !isEditing && selected && setIsEditing) {
+            if (isActuallyMobile && !isEditing && selected && setIsEditing) {
               e.preventDefault();
               e.stopPropagation();
               setIsEditing(true);
