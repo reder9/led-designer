@@ -109,16 +109,65 @@ export default function useClipboard({
     if (selectedElement) {
       const el = elements.find(e => e.id === selectedElement);
       if (el) {
+        // Function to check if a position overlaps with existing elements
+        const isPositionOccupied = (x, y, elementWidth = 100, elementHeight = 50) => {
+          return elements.some(existing => {
+            if (existing.id === el.id) return false; // Don't check against self
+
+            const buffer = 20; // Minimum spacing between elements
+            return (
+              x < existing.x + elementWidth + buffer &&
+              x + elementWidth + buffer > existing.x &&
+              y < existing.y + elementHeight + buffer &&
+              y + elementHeight + buffer > existing.y
+            );
+          });
+        };
+
+        // Try to find a good position
+        let newX = el.x;
+        let newY = el.y;
+        let attempts = 0;
+        const maxAttempts = 20;
+
+        // Start with the preferred offset position
+        let offsetX = 60;
+        let offsetY = 60;
+
+        while (attempts < maxAttempts) {
+          // Calculate potential position
+          const testX = el.x + offsetX;
+          const testY = el.y + offsetY;
+
+          // Check bounds first
+          if (testX >= 0 && testX <= 700 && testY >= 0 && testY <= 300) {
+            if (!isPositionOccupied(testX, testY)) {
+              newX = testX;
+              newY = testY;
+              break;
+            }
+          }
+
+          // Try different positions in a spiral pattern
+          attempts++;
+          const angle = attempts * 45 * (Math.PI / 180); // 45 degree increments
+          const radius = 60 + Math.floor(attempts / 8) * 40; // Expand search radius
+          offsetX = Math.cos(angle) * radius;
+          offsetY = Math.sin(angle) * radius;
+        }
+
+        // If we couldn't find a good spot, just use a random position
+        if (attempts >= maxAttempts) {
+          newX = Math.random() * 600 + 50;
+          newY = Math.random() * 250 + 50;
+        }
+
         const newElement = {
           ...el,
           id: Date.now() + Math.random(),
-          x: el.x + 20,
-          y: el.y + 20,
+          x: newX,
+          y: newY,
         };
-
-        // Make sure it doesn't go outside bounds
-        if (newElement.x > 750) newElement.x = 50;
-        if (newElement.y > 350) newElement.y = 50;
 
         const updatedElements = [...elements, newElement];
         setElements(updatedElements);

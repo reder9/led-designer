@@ -8,6 +8,7 @@ function ElementRenderer({
   selected,
   textareaRefs,
   setElements,
+  setSelectedElement,
   _saveToHistory,
   _deleteSelected,
   brightness,
@@ -163,72 +164,101 @@ function ElementRenderer({
     const fontClass = getFontClass(el.fontFamily);
 
     return (
-      <textarea
-        ref={ref => (textareaRefs.current[el.id] = ref)}
-        defaultValue={el.content}
-        data-text-element='true'
-        data-element-type='text'
-        className={`w-full h-full resize-none bg-transparent outline-none ${getTextAlignmentClass()} ${fontClass}`}
-        style={{
-          fontFamily: fontClass ? undefined : el.fontFamily, // Only use inline fontFamily if no class available
-          fontSize: el.fontSize,
-          fontWeight: el.fontWeight || 'normal',
-          fontStyle: el.fontStyle || 'normal',
-          color: isPowerOn ? glowColor : '#666', // Lighter grey for better visibility when power is off
-          opacity: elementOpacity,
-          textShadow: isPowerOn ? getTextGlowEffect() : 'none', // No glow effects when power is off
-          border: selected ? '1px dashed cyan' : 'none',
-          transition: 'all 0.3s ease',
-          animation:
-            isPowerOn && glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none', // No animation when power is off
-          cursor: isEditing ? 'text' : 'move',
-          pointerEvents: isEditing ? 'auto' : 'none', // When not editing, don't interfere with parent drag events
-          whiteSpace: 'pre-wrap', // Preserve line breaks and wrap text
-          overflow: 'hidden', // Hide scrollbars
-          wordWrap: 'break-word', // Break long words if needed
-        }}
-        onBlur={onTextBlur}
-        onKeyDown={onTextKeyDown}
-        onChange={e => {
-          // Update element content when text changes
-          if (setElements) {
-            setElements(prev =>
-              prev.map(elem => (elem.id === el.id ? { ...elem, content: e.target.value } : elem))
-            );
-          }
-        }}
-        readOnly={!isEditing}
-        onClick={e => {
-          // If we're editing, allow normal textarea interaction
-          if (isEditing) {
-            // Don't propagate when actively editing to prevent interference
-            e.stopPropagation();
-            return;
-          }
+      <div className='relative w-full h-full'>
+        <textarea
+          ref={ref => (textareaRefs.current[el.id] = ref)}
+          defaultValue={el.content}
+          data-text-element='true'
+          data-element-type='text'
+          className={`w-full h-full resize-none bg-transparent outline-none ${getTextAlignmentClass()} ${fontClass}`}
+          style={{
+            fontFamily: fontClass ? undefined : el.fontFamily, // Only use inline fontFamily if no class available
+            fontSize: el.fontSize,
+            fontWeight: el.fontWeight || 'normal',
+            fontStyle: el.fontStyle || 'normal',
+            color: isPowerOn ? glowColor : '#666', // Lighter grey for better visibility when power is off
+            opacity: elementOpacity,
+            textShadow: isPowerOn ? getTextGlowEffect() : 'none', // No glow effects when power is off
+            border: selected ? '1px dashed cyan' : 'none',
+            transition: 'all 0.3s ease',
+            animation:
+              isPowerOn && glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none', // No animation when power is off
+            cursor: isEditing ? 'text' : 'move',
+            pointerEvents: isEditing ? 'auto' : 'none', // When not editing, don't interfere with parent drag events
+            whiteSpace: 'pre-wrap', // Preserve line breaks and wrap text
+            overflow: 'hidden', // Hide scrollbars
+            wordWrap: 'break-word', // Break long words if needed
+          }}
+          onBlur={onTextBlur}
+          onKeyDown={onTextKeyDown}
+          onChange={e => {
+            // Update element content when text changes
+            if (setElements) {
+              setElements(prev =>
+                prev.map(elem => (elem.id === el.id ? { ...elem, content: e.target.value } : elem))
+              );
+            }
+          }}
+          readOnly={!isEditing}
+          onClick={e => {
+            // If we're editing, allow normal textarea interaction
+            if (isEditing) {
+              // Don't propagate when actively editing to prevent interference
+              e.stopPropagation();
+              return;
+            }
 
-          // If not editing, we need to allow the parent to handle selection first
-          // Don't stop propagation so parent can select the element
-          // The parent will then call setIsEditing if appropriate
-        }}
-        onDoubleClick={e => {
-          // Double click should always try to enable editing
-          e.stopPropagation();
-          if (!isEditing && setIsEditing) {
-            setIsEditing(true);
-            setTimeout(() => {
-              e.target.focus();
+            // If not editing, we need to allow the parent to handle selection first
+            // Don't stop propagation so parent can select the element
+            // The parent will then call setIsEditing if appropriate
+          }}
+          onDoubleClick={e => {
+            // Double click should always try to enable editing
+            e.stopPropagation();
+            if (!isEditing && setIsEditing) {
+              setIsEditing(true);
+              setTimeout(() => {
+                e.target.focus();
+                e.target.select();
+              }, 10);
+            }
+          }}
+          onFocus={e => {
+            // Select all text when the textarea receives focus
+            if (selectOnFocusRef.current) {
               e.target.select();
-            }, 10);
-          }
-        }}
-        onFocus={e => {
-          // Select all text when the textarea receives focus
-          if (selectOnFocusRef.current) {
-            e.target.select();
-            selectOnFocusRef.current = false;
-          }
-        }}
-      />
+              selectOnFocusRef.current = false;
+            }
+          }}
+        />
+
+        {/* Delete Button - Only show when selected */}
+        {selected && (
+          <button
+            className='absolute -top-6 -right-6 w-7 h-7 bg-white hover:bg-gray-100 text-red-500 hover:text-red-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-md border border-gray-200 z-10'
+            onClick={e => {
+              e.stopPropagation();
+              if (setElements) {
+                setElements(prev => prev.filter(elem => elem.id !== el.id));
+                // Clear selection since we're deleting the selected element
+                if (setSelectedElement) {
+                  setSelectedElement(null);
+                }
+              }
+            }}
+            onMouseDown={e => e.stopPropagation()}
+          >
+            <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+              />
+            </svg>
+          </button>
+        )}
+      </div>
     );
   }
 
@@ -304,6 +334,33 @@ function ElementRenderer({
             />
           </div>
         </>
+
+        {/* Delete Button - Only show when selected */}
+        {selected && (
+          <button
+            className='absolute -top-6 -right-6 w-7 h-7 bg-white hover:bg-gray-100 text-red-500 hover:text-red-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-md border border-gray-200 z-10'
+            onClick={e => {
+              e.stopPropagation();
+              if (setElements) {
+                setElements(prev => prev.filter(elem => elem.id !== el.id));
+                // Clear selection since we're deleting the selected element
+                if (setSelectedElement) {
+                  setSelectedElement(null);
+                }
+              }
+            }}
+            onMouseDown={e => e.stopPropagation()}
+          >
+            <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+              />
+            </svg>
+          </button>
+        )}
       </div>
     );
   }

@@ -593,6 +593,7 @@ export default function Panel({
               selected={selectedElement === el.id}
               textareaRefs={textareaRefs}
               setElements={setElements}
+              setSelectedElement={setSelectedElement}
               saveToHistory={saveToHistory}
               deleteSelected={deleteSelected}
               brightness={brightness}
