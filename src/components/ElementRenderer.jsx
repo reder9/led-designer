@@ -248,13 +248,6 @@ function ElementRenderer({
           }}
           readOnly={!isEditing}
           onClick={e => {
-            console.log('Text element clicked:', {
-              isEditing,
-              isActuallyMobile,
-              selected,
-              hasSetIsEditing: !!setIsEditing,
-            });
-
             // If we're editing, allow normal textarea interaction
             if (isEditing) {
               // Don't propagate when actively editing to prevent interference
@@ -264,7 +257,6 @@ function ElementRenderer({
 
             // Mobile-friendly editing: single tap to edit on mobile devices
             if (isActuallyMobile && selected && setIsEditing) {
-              console.log('Triggering mobile edit mode');
               e.stopPropagation();
               setIsEditing(true);
               setTimeout(() => {

@@ -46,15 +46,20 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
       #${elementId} .react-moveable-line,
       #${elementId} .react-moveable,
       #${elementId} [class*="guide"],
-      #${elementId} [class*="snapping"] {
+      #${elementId} [class*="snapping"],
+      #${elementId} button[class*="absolute"],
+      #${elementId} button svg[viewBox="0 0 24 24"],
+      #${elementId} .element-wrapper button,
+      #${elementId} button[class*="trash"],
+      #${elementId} button[class*="delete"] {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
       }
       
-      /* HIDE THE PANEL BACKGROUND - this was causing the gray bar */
+      /* ENSURE PANEL BACKGROUND IS BLACK */
       #${elementId} #panel-inner {
-        background: transparent !important;
+        background: #000000 !important;
         border: none !important;
         opacity: 1 !important;
       }
@@ -209,7 +214,7 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
     // Generate the image
     let dataUrl;
     const exportOptions = {
-      backgroundColor: 'transparent',
+      backgroundColor: '#000000', // Use solid black background instead of transparent for better mobile compatibility
       skipFonts: false, // DON'T skip fonts - we need them preserved
       skipDefaultFonts: false, // Allow system fonts
       useCORS: true, // Enable CORS for font loading

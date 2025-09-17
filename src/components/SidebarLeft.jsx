@@ -51,6 +51,9 @@ export default function SidebarLeft({
       setIsExporting(true);
       setExportProgress(0);
 
+      // Clear any selected element to ensure no UI elements appear in export
+      setSelectedElement(null);
+
       await exportImage('panel-wrapper', 'png', (progress, _message) => {
         setExportProgress(progress);
       });
