@@ -111,24 +111,70 @@ export default function App() {
 
   const { width: panelWidth, height: panelHeight } = getMobilePanelDimensions();
 
+  // Update existing elements when panel dimensions change
+  useEffect(() => {
+    if (elements.length > 0) {
+      setElements(prevElements =>
+        prevElements.map(element => {
+          if (element.type === 'text' && element.content === 'Customize your LED panel') {
+            // Recalculate dimensions and position for the placeholder text
+            const textWidthRatio = 0.6;
+            const textHeightRatio = 0.15;
+            const textWidth = Math.round(panelWidth * textWidthRatio);
+            const textHeight = Math.round(panelHeight * textHeightRatio);
+            const baseFontSize = panelWidth / 25;
+            const fontSize = Math.max(Math.min(baseFontSize, 48), 16);
+
+            return {
+              ...element,
+              x: (panelWidth - textWidth) / 2,
+              y: (panelHeight - textHeight) / 2,
+              width: textWidth,
+              height: textHeight,
+              fontSize: Math.round(fontSize),
+            };
+          }
+          return element;
+        })
+      );
+    }
+  }, [panelWidth, panelHeight]); // Update when panel dimensions change
+
   // Initialize placeholder text with dynamic positioning (only once)
   useEffect(() => {
     // Only create the initial element if we haven't initialized elements yet
     if (!hasInitializedElements) {
-      const textWidth = isMobile ? Math.min(panelWidth * 0.8, 300) : 400;
-      const textHeight = isMobile ? 40 : 60;
-      const fontSize = isMobile ? Math.max(panelWidth / 30, 14) : 32; // Smaller font for mobile
+      // Calculate text dimensions based on actual panel size (proportional scaling)
+      const textWidthRatio = 0.6; // Text takes up 60% of panel width
+      const textHeightRatio = 0.15; // Text takes up 15% of panel height
+
+      const textWidth = Math.round(panelWidth * textWidthRatio);
+      const textHeight = Math.round(panelHeight * textHeightRatio);
+
+      // Scale font size proportionally to panel width (maintain readability)
+      const baseFontSize = panelWidth / 25; // Proportional to panel width
+      const fontSize = Math.max(Math.min(baseFontSize, 48), 16); // Between 16px and 48px
+
+      console.log('📝 Text positioning:', {
+        panelWidth,
+        panelHeight,
+        textWidth,
+        textHeight,
+        fontSize,
+        textWidthRatio,
+        textHeightRatio,
+      });
 
       const placeholderElement = {
         id: Date.now(),
         type: 'text',
         content: 'Customize your LED panel',
-        x: (panelWidth - textWidth) / 2, // Properly center horizontally
-        y: (panelHeight - textHeight) / 2, // Properly center vertically
+        x: (panelWidth - textWidth) / 2, // Center horizontally
+        y: (panelHeight - textHeight) / 2, // Center vertically
         width: textWidth,
         height: textHeight,
         fontFamily: 'Impact',
-        fontSize,
+        fontSize: Math.round(fontSize),
       };
       setElements([placeholderElement]);
       setSelectedElement(placeholderElement.id);
