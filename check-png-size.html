@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNG Size Checker</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 50px;
+            text-align: center;
+            background: white;
+            margin-bottom: 20px;
+        }
+        .drop-zone.dragover {
+            border-color: #007bff;
+            background-color: #f0f8ff;
+        }
+        .result {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+        }
+        .dimensions {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+        .ratio {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .ratio.perfect { color: green; }
+        .ratio.imperfect { color: red; }
+        .preview {
+            max-width: 100%;
+            max-height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .file-input {
+            margin: 20px 0;
+        }
+        .help {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <h1>PNG Dimension Checker</h1>
+    
+    <div class="help">
+        <strong>How to use:</strong>
+        <ol>
+            <li>Export a PNG from your LED panel app</li>
+            <li>Drop the PNG file here or click "Choose File"</li>
+            <li>Check if the ratio is exactly 2:1 (width should be exactly double the height)</li>
+        </ol>
+    </div>
+
+    <div class="drop-zone" id="dropZone">
+        <p>🖼️ Drop your PNG file here or click to select</p>
+        <input type="file" id="fileInput" accept=".png,.jpg,.jpeg,.gif" class="file-input" />
+    </div>
+
+    <div id="result" class="result" style="display: none;">
+        <h2>Image Information:</h2>
+        <div id="fileName"></div>
+        <div id="dimensions" class="dimensions"></div>
+        <div id="ratio" class="ratio"></div>
+        <div id="fileSize"></div>
+        <img id="preview" class="preview" style="display: none;" />
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const result = document.getElementById('result');
+
+        // Handle file input click
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFile);
+
+        // Handle drag and drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileObject(files[0]);
+            }
+        });
+
+        function handleFile(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFileObject(file);
+            }
+        }
+
+        function handleFileObject(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const img = new Image();
+                
+                img.onload = function() {
+                    const width = img.width;
+                    const height = img.height;
+                    const ratio = width / height;
+                    const isPerfect2to1 = Math.abs(ratio - 2.0) < 0.001; // Allow tiny floating point differences
+                    
+                    // Display results
+                    document.getElementById('fileName').textContent = `File: ${file.name}`;
+                    document.getElementById('dimensions').textContent = `${width} × ${height} pixels`;
+                    
+                    const ratioElement = document.getElementById('ratio');
+                    ratioElement.textContent = `Ratio: ${ratio.toFixed(3)}:1 ${isPerfect2to1 ? '✅ Perfect 2:1!' : '❌ Not 2:1'}`;
+                    ratioElement.className = isPerfect2to1 ? 'ratio perfect' : 'ratio imperfect';
+                    
+                    document.getElementById('fileSize').textContent = `File Size: ${(file.size / 1024).toFixed(1)} KB`;
+                    
+                    // Show preview
+                    const preview = document.getElementById('preview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    
+                    result.style.display = 'block';
+                    
+                    // Log to console too
+                    console.log('Image Analysis:', {
+                        file: file.name,
+                        dimensions: `${width}x${height}`,
+                        ratio: ratio,
+                        isPerfect2to1: isPerfect2to1,
+                        sizeKB: Math.round(file.size / 1024)
+                    });
+                };
+                
+                img.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>

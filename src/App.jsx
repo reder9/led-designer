@@ -7,7 +7,7 @@ import './index.css';
 
 export default function App() {
   const baseWidth = 800;
-  const baseHeight = 400;
+  const baseHeight = 400; // Ensuring perfect 2:1 ratio (800/400 = 2)
 
   const [elements, setElements] = useState([]);
   const [glowColor, setGlowColor] = useState('#00faff');
@@ -37,7 +37,11 @@ export default function App() {
   // Detect mobile and calculate dynamic dimensions
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      const windowWidth = window.innerWidth;
+      const isMobileCalc = windowWidth < 768;
+      console.log('🔍 Resize event:', { windowWidth, isMobileCalc, currentIsMobile: isMobile });
+
+      setIsMobile(isMobileCalc);
       // Force re-render to update panel dimensions
       setElements(prevElements => [...prevElements]);
     };
@@ -46,19 +50,56 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Calculate mobile panel dimensions dynamically
+  // Calculate panel dimensions with perfect 2:1 ratio enforcement
   const getMobilePanelDimensions = () => {
-    if (!isMobile || typeof window === 'undefined') return { width: baseWidth, height: baseHeight };
+    const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    console.log('🔍 Calculating dimensions:', {
+      windowWidth,
+      isMobile,
+      hasWindow: typeof window !== 'undefined',
+    });
+
+    // TEMPORARY FIX: Always use exact desktop dimensions to ensure 2:1 ratio
+    // TODO: Fix mobile responsive calculations later
+    console.log(
+      '🖥️ FORCING desktop dimensions:',
+      baseWidth,
+      'x',
+      baseHeight,
+      '- Ratio:',
+      (baseWidth / baseHeight).toFixed(3)
+    );
+    return { width: baseWidth, height: baseHeight };
+
+    /* DISABLED MOBILE LOGIC - UNCOMMENT TO RE-ENABLE
+    // For desktop/non-mobile, ALWAYS use exact base dimensions
+    if (!isMobile || typeof window === 'undefined') {
+      console.log('🖥️ Using desktop dimensions:', baseWidth, 'x', baseHeight, '- Ratio:', (baseWidth/baseHeight).toFixed(3));
+      return { width: baseWidth, height: baseHeight };
+    }
 
     const screenWidth = window.innerWidth;
     const padding = 24; // Total horizontal padding (12px on each side)
     const availableWidth = screenWidth - padding;
 
     // Use 90% of available width, ensuring minimum and maximum sizes
-    const mobileWidth = Math.min(Math.max(availableWidth * 0.9, 300), 600);
-    const mobileHeight = mobileWidth / 2; // Maintain 2:1 ratio
-
+    let mobileWidth = Math.min(Math.max(availableWidth * 0.9, 300), 600);
+    
+    // Ensure the width results in a perfect 2:1 ratio by rounding to even numbers
+    mobileWidth = Math.round(mobileWidth);
+    const mobileHeight = Math.round(mobileWidth / 2);
+    
+    console.log('📱 Mobile calculation details:', { 
+      screenWidth, 
+      padding, 
+      availableWidth, 
+      'availableWidth*0.9': availableWidth * 0.9,
+      mobileWidth, 
+      mobileHeight, 
+      ratio: (mobileWidth/mobileHeight).toFixed(3)
+    });
     return { width: mobileWidth, height: mobileHeight };
+    */
   };
 
   const { width: panelWidth, height: panelHeight } = getMobilePanelDimensions();
@@ -139,9 +180,13 @@ export default function App() {
                 style={{
                   width: `${panelWidth}px`,
                   height: `${panelHeight}px`,
-                  maxWidth: '100%',
+                  // Remove maxWidth constraint to allow exact dimensions
+                  // maxWidth: '100%',
                   // Add margin to accommodate the glow on both mobile and desktop
                   margin: '30px',
+                  // Ensure the panel maintains exact dimensions
+                  minWidth: `${panelWidth}px`,
+                  minHeight: `${panelHeight}px`,
                 }}
               >
                 <Panel
@@ -313,8 +358,8 @@ export default function App() {
               setGlowColor={setGlowColor}
               glowMode={glowMode}
               setGlowMode={setGlowMode}
-              width={baseWidth}
-              height={baseHeight}
+              width={panelWidth}
+              height={panelHeight}
               showLedBorder={showLedBorder}
               setShowLedBorder={setShowLedBorder}
             />
@@ -322,8 +367,19 @@ export default function App() {
 
           {/* Center Panel */}
           <div className='flex-1 flex flex-col items-center justify-center border-x border-gray-700 overflow-hidden'>
-            <div className='w-full max-w-5xl flex justify-center items-center p-6'>
-              <div className='relative w-full aspect-[2/1] flex items-center justify-center'>
+            <div
+              className='w-full flex justify-center items-center p-6'
+              style={{ minWidth: `${panelWidth + 60}px` }}
+            >
+              <div
+                className='relative flex items-center justify-center'
+                style={{
+                  width: `${panelWidth}px`,
+                  height: `${panelHeight}px`,
+                  minWidth: `${panelWidth}px`,
+                  minHeight: `${panelHeight}px`,
+                }}
+              >
                 <Panel
                   elements={elements}
                   setElements={setElements}
@@ -333,8 +389,8 @@ export default function App() {
                   isPowerOn={isPowerOn}
                   roundedEdges={roundedEdges}
                   borderRadius={borderRadius}
-                  width={baseWidth}
-                  height={baseHeight}
+                  width={panelWidth}
+                  height={panelHeight}
                   glowMode={glowMode}
                   brightness={brightness}
                   speed={speed}

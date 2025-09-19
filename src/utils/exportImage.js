@@ -27,6 +27,20 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
 
     updateProgress(30, 'Preparing export...');
 
+    // Debug: Log the actual panel dimensions
+    const panelRect = panel.getBoundingClientRect();
+    console.log('🔍 Panel dimensions at export:');
+    console.log('  - Element ID:', elementId);
+    console.log('  - BoundingRect:', panelRect.width, 'x', panelRect.height);
+    console.log('  - Style width/height:', panel.style.width, panel.style.height);
+    console.log(
+      '  - Computed style:',
+      getComputedStyle(panel).width,
+      'x',
+      getComputedStyle(panel).height
+    );
+    console.log('  - Ratio:', (panelRect.width / panelRect.height).toFixed(3), '(should be 2.000)');
+
     // Create a comprehensive CSS override for clean export
     const style = document.createElement('style');
     style.id = 'export-override-styles';
@@ -211,7 +225,7 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
 
     updateProgress(50, 'Capturing image...');
 
-    // Generate the image
+    // Generate the image with exact panel dimensions (maintaining 2:1 ratio)
     let dataUrl;
     const exportOptions = {
       backgroundColor: '#000000', // Use solid black background instead of transparent for better mobile compatibility
@@ -219,6 +233,7 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
       skipDefaultFonts: false, // Allow system fonts
       useCORS: true, // Enable CORS for font loading
       allowTaint: false, // Don't allow tainted canvas
+      pixelRatio: 1, // Use 1:1 pixel ratio to maintain exact dimensions (no scaling)
       filter: node => {
         // Skip problematic elements but keep fonts
         if (node.tagName === 'LINK' && node.href && node.href.includes('fonts.googleapis.com')) {
@@ -252,10 +267,8 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
     if (format === 'svg') {
       dataUrl = await htmlToImage.toSvg(panel, exportOptions);
     } else {
-      dataUrl = await htmlToImage.toPng(panel, {
-        ...exportOptions,
-        pixelRatio: 2, // Higher quality for PNG
-      });
+      // Remove pixelRatio to maintain exact panel dimensions (no scaling)
+      dataUrl = await htmlToImage.toPng(panel, exportOptions);
     }
 
     // Remove the style override and restore original SVG styles
@@ -277,6 +290,17 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
     });
 
     updateProgress(90, 'Preparing download...');
+
+    // Debug: Check final image dimensions
+    if (format === 'png') {
+      // Create a temporary image to check dimensions
+      const tempImg = new Image();
+      tempImg.onload = function () {
+        console.log('🖼️ Final PNG dimensions:', this.width, 'x', this.height);
+        console.log('🖼️ Final ratio:', (this.width / this.height).toFixed(3), '(should be 2.000)');
+      };
+      tempImg.src = dataUrl;
+    }
 
     // Create download link
     const link = document.createElement('a');
