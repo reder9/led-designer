@@ -59,17 +59,24 @@ export default function App() {
       hasWindow: typeof window !== 'undefined',
     });
 
-    // TEMPORARY FIX: Always use exact desktop dimensions to ensure 2:1 ratio
-    // TODO: Fix mobile responsive calculations later
-    console.log(
-      '🖥️ FORCING desktop dimensions:',
-      baseWidth,
-      'x',
-      baseHeight,
-      '- Ratio:',
-      (baseWidth / baseHeight).toFixed(3)
-    );
-    return { width: baseWidth, height: baseHeight };
+    // Calculate available space for panel in desktop layout
+    // Total width - left sidebar (320px) - right sidebar (320px) - glow space (160px total)
+    const availableDesktopWidth = windowWidth - 320 - 320 - 160; // Space for both sidebars + glow
+    const maxDesktopPanelWidth = Math.min(baseWidth, availableDesktopWidth);
+
+    // Ensure perfect 2:1 ratio
+    const adjustedWidth = Math.max(400, maxDesktopPanelWidth); // Minimum 400px width
+    const adjustedHeight = adjustedWidth / 2; // Perfect 2:1 ratio
+
+    console.log('🖥️ Adjusted desktop dimensions:', {
+      windowWidth,
+      availableDesktopWidth,
+      adjustedWidth,
+      adjustedHeight,
+      ratio: (adjustedWidth / adjustedHeight).toFixed(3),
+    });
+
+    return { width: adjustedWidth, height: adjustedHeight };
 
     /* DISABLED MOBILE LOGIC - UNCOMMENT TO RE-ENABLE
     // For desktop/non-mobile, ALWAYS use exact base dimensions
@@ -174,16 +181,14 @@ export default function App() {
             className={`flex-none bg-gray-900 border-b border-gray-700 ${isMobile ? 'p-4' : 'p-3'}`}
             style={{ overflow: 'visible' }}
           >
-            <div className='w-full flex justify-center'>
+            <div className='w-full flex justify-center' style={{ overflow: 'visible' }}>
               <div
                 className={`relative bg-black rounded-xl overflow-visible`}
                 style={{
                   width: `${panelWidth}px`,
                   height: `${panelHeight}px`,
-                  // Remove maxWidth constraint to allow exact dimensions
-                  // maxWidth: '100%',
-                  // Add margin to accommodate the glow on both mobile and desktop
-                  margin: '30px',
+                  // Simple margin - panel size will be calculated to fit available space
+                  margin: '20px',
                   // Ensure the panel maintains exact dimensions
                   minWidth: `${panelWidth}px`,
                   minHeight: `${panelHeight}px`,
@@ -366,10 +371,13 @@ export default function App() {
           </div>
 
           {/* Center Panel */}
-          <div className='flex-1 flex flex-col items-center justify-center border-x border-gray-700 overflow-hidden'>
+          <div className='flex-1 flex flex-col items-center justify-center border-x border-gray-700 overflow-visible'>
             <div
-              className='w-full flex justify-center items-center p-6'
-              style={{ minWidth: `${panelWidth + 60}px` }}
+              className='w-full flex justify-center items-center'
+              style={{
+                padding: '20px', // Minimal padding, panel will size to fit available space
+                overflow: 'visible',
+              }}
             >
               <div
                 className='relative flex items-center justify-center'
@@ -378,6 +386,7 @@ export default function App() {
                   height: `${panelHeight}px`,
                   minWidth: `${panelWidth}px`,
                   minHeight: `${panelHeight}px`,
+                  overflow: 'visible', // Allow glow to extend beyond bounds
                 }}
               >
                 <Panel
