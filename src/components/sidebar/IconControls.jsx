@@ -13,6 +13,7 @@ function IconControls({
   const categories = [
     { name: 'Social', emoji: '📱', key: 'social' },
     { name: 'Gaming', emoji: '🎮', key: 'gaming' },
+    { name: 'Misc', emoji: '🎨', key: 'misc' },
     { name: 'Sports', emoji: '⚽', key: 'sports' },
   ];
 
@@ -54,7 +55,7 @@ function IconControls({
                       />
                     </div>
                     <div className='text-xs text-gray-400 mt-1 truncate text-center'>
-                      {iconName.split('-').pop()}
+                      {iconName}
                     </div>
                   </button>
                 ))}

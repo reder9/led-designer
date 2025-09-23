@@ -2,6 +2,7 @@
 const socialIcons = import.meta.glob('../assets/icons/social/*.svg', { eager: true });
 const streamingIcons = import.meta.glob('../assets/icons/streaming/*.svg', { eager: true });
 const gamingIcons = import.meta.glob('../assets/icons/gaming/*.svg', { eager: true });
+const miscIcons = import.meta.glob('../assets/icons/misc/*.svg', { eager: true });
 const sportsIcons = import.meta.glob('../assets/icons/sports/*.svg', { eager: true });
 
 // Helper function to process icon modules
@@ -20,6 +21,7 @@ export const iconsByCategory = {
   streaming: processIcons(streamingIcons),
   gaming: processIcons(gamingIcons),
   sports: processIcons(sportsIcons),
+  misc: processIcons(miscIcons),
 };
 
 // Combined icons object for backward compatibility
@@ -28,4 +30,5 @@ export const icons = {
   ...iconsByCategory.streaming,
   ...iconsByCategory.gaming,
   ...iconsByCategory.sports,
+  ...iconsByCategory.misc,
 };

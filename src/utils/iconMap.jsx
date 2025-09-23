@@ -11,6 +11,11 @@ const gamingIcons = import.meta.glob('../assets/icons/gaming/*.svg', {
   query: '?raw',
   import: 'default',
 });
+const miscIcons = import.meta.glob('../assets/icons/misc/*.svg', {
+  eager: true,
+  query: '?raw',
+  import: 'default',
+});
 const sportsIcons = import.meta.glob('../assets/icons/sports/*.svg', {
   eager: true,
   query: '?raw',
@@ -75,6 +80,7 @@ const processIcons = iconModules => {
 export const iconComponentMap = {
   ...processIcons(socialIcons),
   ...processIcons(gamingIcons),
+  ...processIcons(miscIcons),
   ...processIcons(sportsIcons),
 };
 
