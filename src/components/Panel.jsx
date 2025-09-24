@@ -677,6 +677,39 @@ export default function Panel({
             onResizeStart={() => {
               setIsDragging(true);
             }}
+            /* Rotatable */
+            rotatable={!isEditing}
+            throttleRotate={0}
+            onRotateStart={() => {
+              setIsDragging(true);
+            }}
+            onRotate={({ target, _beforeRotation, rotation }) => {
+              const selectedEl = elements.find(el => el.id === selectedElement);
+              if (!selectedEl) return;
+
+              // Apply rotation to element
+              const newRotation = rotation;
+              target.style.transform = `rotate(${newRotation}deg)`;
+
+              // Update element rotation in state during rotation
+              setElements(prev =>
+                prev.map(el => (el.id === selectedElement ? { ...el, rotation: newRotation } : el))
+              );
+            }}
+            onRotateEnd={({ _target }) => {
+              setIsDragging(false);
+              const selectedEl = elements.find(el => el.id === selectedElement);
+              if (!selectedEl) return;
+
+              // Save final rotation to history
+              setElements(prev => {
+                const updated = prev.map(el =>
+                  el.id === selectedElement ? { ...el, rotation: selectedEl.rotation } : el
+                );
+                saveToHistory(updated);
+                return updated;
+              });
+            }}
             onResize={({ target, width: newWidth, height: newHeight, left, top }) => {
               const selectedEl = elements.find(el => el.id === selectedElement);
               if (!selectedEl) return;

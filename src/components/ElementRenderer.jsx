@@ -173,7 +173,13 @@ function ElementRenderer({
     const fontClass = getFontClass(el.fontFamily);
 
     return (
-      <div className={`relative w-full h-full ${isActuallyMobile ? 'touch-target' : ''}`}>
+      <div
+        className={`relative w-full h-full ${isActuallyMobile ? 'touch-target' : ''}`}
+        style={{
+          transform: `rotate(${el.rotation || 0}deg)`,
+          transformOrigin: 'center center',
+        }}
+      >
         <TextareaAutosize
           ref={ref => (textareaRefs.current[el.id] = ref)}
           defaultValue={el.content}
@@ -349,7 +355,8 @@ function ElementRenderer({
           border: selected ? '1px dashed cyan' : 'none',
           animation: glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none',
           pointerEvents: 'auto',
-          transform: 'translate3d(0, 0, 0)',
+          transform: `rotate(${el.rotation || 0}deg) translate3d(0, 0, 0)`,
+          transformOrigin: 'center center',
           willChange: 'transform',
           borderRadius: '4px',
         }}

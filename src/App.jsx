@@ -39,6 +39,7 @@ export default function App() {
     const handleResize = () => {
       const windowWidth = window.innerWidth;
       const isMobileCalc = windowWidth < 768;
+      // eslint-disable-next-line no-console
       console.log('🔍 Resize event:', { windowWidth, isMobileCalc, currentIsMobile: isMobile });
 
       setIsMobile(isMobileCalc);
@@ -48,11 +49,12 @@ export default function App() {
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [isMobile]);
 
   // Calculate panel dimensions with perfect 2:1 ratio enforcement
   const getMobilePanelDimensions = () => {
     const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    // eslint-disable-next-line no-console
     console.log('🔍 Calculating dimensions:', {
       windowWidth,
       isMobile,
@@ -68,6 +70,7 @@ export default function App() {
     const adjustedWidth = Math.max(400, maxDesktopPanelWidth); // Minimum 400px width
     const adjustedHeight = adjustedWidth / 2; // Perfect 2:1 ratio
 
+    // eslint-disable-next-line no-console
     console.log('🖥️ Adjusted desktop dimensions:', {
       windowWidth,
       availableDesktopWidth,
@@ -138,7 +141,7 @@ export default function App() {
         })
       );
     }
-  }, [panelWidth, panelHeight]); // Update when panel dimensions change
+  }, [panelWidth, panelHeight, elements.length]); // Update when panel dimensions change
 
   // Initialize placeholder text with dynamic positioning (only once)
   useEffect(() => {
@@ -155,6 +158,7 @@ export default function App() {
       const baseFontSize = panelWidth / 25; // Proportional to panel width
       const fontSize = Math.max(Math.min(baseFontSize, 48), 16); // Between 16px and 48px
 
+      // eslint-disable-next-line no-console
       console.log('📝 Text positioning:', {
         panelWidth,
         panelHeight,
@@ -175,6 +179,7 @@ export default function App() {
         height: textHeight,
         fontFamily: 'Impact',
         fontSize: Math.round(fontSize),
+        rotation: 0, // Add rotation property
       };
       setElements([placeholderElement]);
       setSelectedElement(placeholderElement.id);
