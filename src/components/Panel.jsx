@@ -703,29 +703,16 @@ export default function Panel({
               const selectedEl = elements.find(el => el.id === selectedElement);
               if (!selectedEl) return;
 
-              // Ensure text elements have correct dimensions for collision detection
-              const correctedElement = ensureCorrectTextDimensions(selectedEl, textareaRefs);
-
-              // If dimensions were corrected, update the element in state
-              if (
-                correctedElement.width !== selectedEl.width ||
-                correctedElement.height !== selectedEl.height
-              ) {
-                setElements(prev =>
-                  prev.map(el => (el.id === selectedElement ? correctedElement : el))
-                );
-              }
-
               // Apply custom snapping logic first using the existing hook reference
-              const snappedPosition = _applySnapping(correctedElement, left, top);
+              const snappedPosition = _applySnapping(selectedEl, left, top);
 
               // Get safe position using collision prevention hook
               const safePosition = getSafePosition(
                 selectedElement,
                 snappedPosition.x,
                 snappedPosition.y,
-                correctedElement.width,
-                correctedElement.height
+                selectedEl.width,
+                selectedEl.height
               );
 
               if (safePosition) {
@@ -741,8 +728,8 @@ export default function Panel({
                 );
               } else {
                 // No safe position found, revert to current position
-                target.style.left = `${correctedElement.x}px`;
-                target.style.top = `${correctedElement.y}px`;
+                target.style.left = `${selectedEl.x}px`;
+                target.style.top = `${selectedEl.y}px`;
               }
             }}
             onDragEnd={({ target }) => {
@@ -750,11 +737,16 @@ export default function Panel({
               const left = parseInt(target.style.left);
               const top = parseInt(target.style.top);
 
-              // Save to history
+              // Save to history and ensure text dimensions are correct for next operation
               setElements(prev => {
-                const updated = prev.map(el =>
-                  el.id === selectedElement ? { ...el, x: left, y: top } : el
-                );
+                const updated = prev.map(el => {
+                  if (el.id === selectedElement) {
+                    const updatedEl = { ...el, x: left, y: top };
+                    // Ensure text elements have correct dimensions after drag
+                    return ensureCorrectTextDimensions(updatedEl, textareaRefs);
+                  }
+                  return el;
+                });
                 saveToHistory(updated);
                 return updated;
               });
