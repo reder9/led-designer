@@ -187,6 +187,7 @@ export default function SidebarLeft({
       fontWeight: 'normal',
       fontStyle: 'normal',
       textAlign: 'center',
+      rotation: 0, // Add rotation property
     };
     setElements([...elements, newElement]);
     setSelectedElement(newElement.id);
@@ -213,6 +214,7 @@ export default function SidebarLeft({
       y: position.y,
       width: elementSize.width,
       height: elementSize.height,
+      rotation: 0, // Add rotation property
     };
     setElements([...elements, newElement]);
     setSelectedElement(newElement.id);
@@ -292,6 +294,15 @@ export default function SidebarLeft({
 
   const setTextAlignment = alignment => {
     updateTextFormat('textAlign', alignment);
+  };
+
+  const updateRotation = rotation => {
+    if (selectedElement) {
+      const clampedRotation = Math.max(-180, Math.min(180, rotation));
+      setElements(
+        elements.map(el => (el.id === selectedElement ? { ...el, rotation: clampedRotation } : el))
+      );
+    }
   };
 
   const handleFontSizeInputChange = e => {
@@ -436,6 +447,7 @@ export default function SidebarLeft({
               handleFontSizeInputKeyPress={handleFontSizeInputKeyPress}
               decrementFontSize={() => updateFontSize(fontSize - 1)}
               incrementFontSize={() => updateFontSize(fontSize + 1)}
+              updateRotation={updateRotation}
             />
           )}
 
@@ -446,6 +458,8 @@ export default function SidebarLeft({
               setActiveIconCategory={setActiveIconCategory}
               updateIconContent={updateIconContent}
               selectedElement={selectedElement}
+              selectedIcon={selectedIcon}
+              updateRotation={updateRotation}
             />
           )}
 

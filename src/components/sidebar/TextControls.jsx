@@ -15,6 +15,7 @@ export default function TextControls({
   handleFontSizeInputKeyPress,
   decrementFontSize,
   incrementFontSize,
+  updateRotation, // Add rotation prop
 }) {
   return (
     <div className='space-y-4'>
@@ -101,6 +102,48 @@ export default function TextControls({
               </span>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Rotation Controls */}
+      <div>
+        <label className='text-sm text-gray-400 mb-2 block text-center'>Rotation</label>
+        <div className='flex items-center justify-center gap-2'>
+          <button
+            onClick={() => updateRotation((selectedText.rotation || 0) - 15)}
+            className='w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors'
+            title='Rotate left 15°'
+          >
+            ↺
+          </button>
+          <div className='flex flex-col items-center'>
+            <input
+              type='range'
+              min='-180'
+              max='180'
+              step='1'
+              value={selectedText.rotation || 0}
+              onChange={e => updateRotation(parseInt(e.target.value))}
+              className='w-20 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer'
+            />
+            <span className='text-xs text-gray-400 mt-1'>{selectedText.rotation || 0}°</span>
+          </div>
+          <button
+            onClick={() => updateRotation((selectedText.rotation || 0) + 15)}
+            className='w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors'
+            title='Rotate right 15°'
+          >
+            ↻
+          </button>
+        </div>
+        <div className='flex justify-center mt-2'>
+          <button
+            onClick={() => updateRotation(0)}
+            className='px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors'
+            title='Reset rotation'
+          >
+            Reset
+          </button>
         </div>
       </div>
 

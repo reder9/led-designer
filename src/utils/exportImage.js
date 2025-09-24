@@ -29,16 +29,22 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
 
     // Debug: Log the actual panel dimensions
     const panelRect = panel.getBoundingClientRect();
+    // eslint-disable-next-line no-console
     console.log('🔍 Panel dimensions at export:');
+    // eslint-disable-next-line no-console
     console.log('  - Element ID:', elementId);
+    // eslint-disable-next-line no-console
     console.log('  - BoundingRect:', panelRect.width, 'x', panelRect.height);
+    // eslint-disable-next-line no-console
     console.log('  - Style width/height:', panel.style.width, panel.style.height);
+    // eslint-disable-next-line no-console
     console.log(
       '  - Computed style:',
       getComputedStyle(panel).width,
       'x',
       getComputedStyle(panel).height
     );
+    // eslint-disable-next-line no-console
     console.log('  - Ratio:', (panelRect.width / panelRect.height).toFixed(3), '(should be 2.000)');
 
     // Create a comprehensive CSS override for clean export
@@ -296,7 +302,9 @@ export const exportImage = async (elementId, format = 'png', onProgress = () => 
       // Create a temporary image to check dimensions
       const tempImg = new Image();
       tempImg.onload = function () {
+        // eslint-disable-next-line no-console
         console.log('🖼️ Final PNG dimensions:', this.width, 'x', this.height);
+        // eslint-disable-next-line no-console
         console.log('🖼️ Final ratio:', (this.width / this.height).toFixed(3), '(should be 2.000)');
       };
       tempImg.src = dataUrl;
