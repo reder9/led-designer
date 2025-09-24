@@ -11,6 +11,71 @@ import SnappingGuides from './SnappingGuides';
 import StaticGuides from './StaticGuides';
 import DistanceIndicators from './DistanceIndicators';
 
+// Helper function to calculate minimum dimensions for text elements
+const getMinimumTextDimensions = (textElement, textareaRefs) => {
+  if (textElement.type !== 'text') {
+    return { minWidth: 50, minHeight: 20 }; // Default minimums for non-text elements
+  }
+
+  const textarea = textareaRefs.current[textElement.id];
+  if (!textarea) {
+    // Fallback calculation when textarea ref is not available
+    const estimatedCharWidth = textElement.fontSize * 0.6; // Rough estimation
+    const estimatedLineHeight = textElement.fontSize * 1.4;
+    const textLines = textElement.content.split('\n');
+    const longestLine = Math.max(...textLines.map(line => line.length));
+
+    const minWidth = Math.max(100, longestLine * estimatedCharWidth);
+    const minHeight = Math.max(30, textLines.length * estimatedLineHeight);
+
+    return { minWidth, minHeight };
+  }
+
+  // Create a temporary element to measure text dimensions
+  const tempDiv = document.createElement('div');
+  tempDiv.style.position = 'absolute';
+  tempDiv.style.visibility = 'hidden';
+  tempDiv.style.whiteSpace = 'pre-wrap';
+  tempDiv.style.wordWrap = 'break-word';
+  tempDiv.style.fontFamily = textElement.fontFamily || 'Arial';
+  tempDiv.style.fontSize = `${textElement.fontSize}px`;
+  tempDiv.style.fontWeight = textElement.fontWeight || 'normal';
+  tempDiv.style.fontStyle = textElement.fontStyle || 'normal';
+  tempDiv.style.lineHeight = '1.4';
+  tempDiv.style.padding = '4px'; // Account for textarea padding
+  tempDiv.textContent = textElement.content || 'A'; // Ensure minimum content
+
+  document.body.appendChild(tempDiv);
+  const rect = tempDiv.getBoundingClientRect();
+  document.body.removeChild(tempDiv);
+
+  // Add some padding to ensure text doesn't touch edges
+  const minWidth = Math.max(50, Math.ceil(rect.width) + 10);
+  const minHeight = Math.max(20, Math.ceil(rect.height) + 10);
+
+  return { minWidth, minHeight };
+};
+
+// Helper function to ensure text elements have correct dimensions for collision detection
+const ensureCorrectTextDimensions = (element, textareaRefs) => {
+  if (element.type !== 'text') {
+    return element;
+  }
+
+  const { minWidth, minHeight } = getMinimumTextDimensions(element, textareaRefs);
+
+  // If current dimensions are smaller than the content requires, update them
+  if (element.width < minWidth || element.height < minHeight) {
+    return {
+      ...element,
+      width: Math.max(element.width, minWidth),
+      height: Math.max(element.height, minHeight),
+    };
+  }
+
+  return element;
+};
+
 export default function Panel({
   elements,
   setElements,
@@ -323,6 +388,14 @@ export default function Panel({
     // Always exit edit mode when clicking on any element
     setIsEditing(false);
 
+    // Ensure text elements have correct dimensions before selection
+    const correctedElement = ensureCorrectTextDimensions(el, textareaRefs);
+
+    // If dimensions were corrected, update the element in state
+    if (correctedElement.width !== el.width || correctedElement.height !== el.height) {
+      setElements(prev => prev.map(element => (element.id === el.id ? correctedElement : element)));
+    }
+
     // Select the element (same behavior for all element types)
     setSelectedElement(el.id);
 
@@ -630,14 +703,29 @@ export default function Panel({
               const selectedEl = elements.find(el => el.id === selectedElement);
               if (!selectedEl) return;
 
+              // Ensure text elements have correct dimensions for collision detection
+              const correctedElement = ensureCorrectTextDimensions(selectedEl, textareaRefs);
+
+              // If dimensions were corrected, update the element in state
+              if (
+                correctedElement.width !== selectedEl.width ||
+                correctedElement.height !== selectedEl.height
+              ) {
+                setElements(prev =>
+                  prev.map(el => (el.id === selectedElement ? correctedElement : el))
+                );
+              }
+
               // Apply custom snapping logic first using the existing hook reference
-              const snappedPosition = _applySnapping(selectedEl, left, top);
+              const snappedPosition = _applySnapping(correctedElement, left, top);
 
               // Get safe position using collision prevention hook
               const safePosition = getSafePosition(
                 selectedElement,
                 snappedPosition.x,
-                snappedPosition.y
+                snappedPosition.y,
+                correctedElement.width,
+                correctedElement.height
               );
 
               if (safePosition) {
@@ -653,8 +741,8 @@ export default function Panel({
                 );
               } else {
                 // No safe position found, revert to current position
-                target.style.left = `${selectedEl.x}px`;
-                target.style.top = `${selectedEl.y}px`;
+                target.style.left = `${correctedElement.x}px`;
+                target.style.top = `${correctedElement.y}px`;
               }
             }}
             onDragEnd={({ target }) => {
@@ -714,8 +802,21 @@ export default function Panel({
               const selectedEl = elements.find(el => el.id === selectedElement);
               if (!selectedEl) return;
 
+              // Get minimum dimensions for text elements to prevent content cutoff
+              const { minWidth, minHeight } = getMinimumTextDimensions(selectedEl, textareaRefs);
+
+              // Enforce minimum dimensions
+              const constrainedWidth = Math.max(newWidth, minWidth);
+              const constrainedHeight = Math.max(newHeight, minHeight);
+
               // Get safe resize dimensions using collision prevention hook
-              const safeDimensions = getSafeResize(selectedElement, newWidth, newHeight, left, top);
+              const safeDimensions = getSafeResize(
+                selectedElement,
+                constrainedWidth,
+                constrainedHeight,
+                left,
+                top
+              );
 
               if (safeDimensions) {
                 // Apply safe dimensions

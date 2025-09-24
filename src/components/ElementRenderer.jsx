@@ -196,7 +196,7 @@ function ElementRenderer({
             color: isPowerOn ? glowColor : '#666',
             opacity: elementOpacity,
             textShadow: isPowerOn ? getTextGlowEffect() : 'none',
-            border: selected ? '1px dashed cyan' : 'none',
+            border: 'none',
             transition: 'all 0.3s ease',
             animation:
               isPowerOn && glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none',
@@ -352,7 +352,7 @@ function ElementRenderer({
           opacity: elementOpacity,
           transition: 'all 0.3s ease',
           cursor: 'move',
-          border: selected ? '1px dashed cyan' : 'none',
+          border: 'none',
           animation: glowMode === 'rainbow' ? 'rainbowText 3s linear infinite' : 'none',
           pointerEvents: 'auto',
           transform: `rotate(${el.rotation || 0}deg) translate3d(0, 0, 0)`,
