@@ -333,13 +333,35 @@ export default function SidebarLeft({
         const parser = new DOMParser();
         const doc = parser.parseFromString(text, 'image/svg+xml');
 
+        // First try to find a path element with d attribute
         const pathElement = doc.querySelector('path');
         if (pathElement?.getAttribute('d')) {
           return pathElement.getAttribute('d');
         }
 
+        // If no path with d attribute, try to extract all relevant SVG content
         const svgElement = doc.querySelector('svg');
-        return svgElement?.innerHTML || null;
+        if (svgElement) {
+          // Get all path, circle, rect, polygon elements - actual drawable content
+          const drawableElements = svgElement.querySelectorAll(
+            'path, circle, rect, polygon, line, polyline, ellipse'
+          );
+
+          if (drawableElements.length > 0) {
+            // Return the full content of drawable elements
+            return Array.from(drawableElements)
+              .map(el => el.outerHTML)
+              .join('');
+          }
+
+          // Filter out defs, metadata, and other non-drawable content
+          const innerHTML = svgElement.innerHTML;
+          if (innerHTML && !innerHTML.includes('<defs') && !innerHTML.includes('<metadata')) {
+            return innerHTML;
+          }
+        }
+
+        return null;
       } catch (error) {
         console.error('Error extracting SVG content:', error);
         return null;
@@ -358,7 +380,7 @@ export default function SidebarLeft({
 
             return `
               <symbol id="icon-${key}" viewBox="0 0 24 24">
-                ${svgContent.includes('<path') ? svgContent : `<path d="${svgContent}"/>`}
+                ${svgContent.includes('<') ? svgContent : `<path d="${svgContent}"/>`}
               </symbol>
             `;
           } catch (error) {
